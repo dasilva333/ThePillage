@@ -1,4 +1,6 @@
-#search { color:white; vertical-align:middle }
+
+/* Overrides on top of jQuery mobile's css */
+
 .searchLabel { vertical-align:middle; margin:1em 0; text-align:center; }
 .searchlabelText {  text-align:right; display:none !important; }
 @media screen and (min-width: 600px) {
@@ -12,10 +14,13 @@
 	background-image: url("images/bgPattern.gif");
 	background-repeat: repeat;
 }
-/* jqm docs css
 
-Beware: lots of last-minute CSS going on in here 
-cobblers, shoes, 
+.ui-bar-a, .ui-bar-a input, .ui-bar-a select, .ui-bar-a textarea, .ui-bar-a button { text-align:center }
+
+/* 
+
+The following css came from jqueryMobile.com to add support for primary and secondary views
+
 */
 
 body { background: #dddddd; }

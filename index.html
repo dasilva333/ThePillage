@@ -15,50 +15,56 @@
     
     <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.css" />
     <link rel="stylesheet" href="styles.css">  
-    <title>changePage JSON Sample</title>
     <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
-    <script src="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.js"></script>
+    <script type="text/javascript" src="js/jquery.mobile.js"></script>
 	<script type="text/javascript" src="js/jquery.tmpl.js"></script>
     <script type="text/javascript" src="js/knockout.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>    
     <script type="text/javascript" src="js/oauth.js"></script>
     <script type="text/javascript" src="js/sha1.js"></script>
     <script type="text/javascript" src="js/rc4.js"></script>
+    
+	<script id="searchTemplate" type="text/html">
+		<form method="post" data-ajax="false" onsubmit="return PPL.search.submit(this);">
+			<div data-role="fieldcontain">
+				<label for="search" class="searchlabel">
+					<span class="searchlabelText">Search&nbsp;</span>
+					<input type="search" name="searchBox" placeHolder="Search Songs" onkeyup="PPL.search.autoSubmit(this)">
+				</label>
+			</div>
+		</form>
+    </script>
+    
 	<script id="trackTemplate" type="text/html">
 		{{if PPL.activePage().tracks.indexOf($data) == 0}}
 			<li data-role="list-divider">Search Results</li>
 		{{/if}}
 		<li data-bind="click: open">
-			<a data-bind="href: $data.song_url">
+			<a href="${$data.song_url}">
 				<img data-bind="attr: { src: $data.albumImage }" />
-				<h3 data-bind="text: $data.artist"></h3>
-				<p data-bind="text: $data.title"></p>
-				<span class="ui-li-count" data-bind="text: $data.duration"></span>
+				<h3>${$data.artist}</h3>
+				<p>${$data.title}</p>
+				<span class="ui-li-count">${$data.duration}</span>
 			</a>
 		</li>
     </script>
     
-	<script id="searchTemplate" type="text/html">
-		<form method="post" data-ajax="false" onsubmit="return PPL.search.submit();">
-			<div data-role="fieldcontain">
-				<label for="search" class="searchlabel">
-					<span class="searchlabelText">Search Songs:</span>
-					<input type="search" name="searchBox" onkeyup="PPL.search.autoSubmit(this)">
-				</label>
-			</div>
-		</form>
-    </script><!-- data-bind="value: PPL.search.searchFor, valueUpdate: 'afterkeydown'"-->
+	<script id="historyTemplate" type="text/html">
+		{{if PPL.search.history().indexOf($data) == 0}}
+			<li data-role="list-divider">Search History</li>
+		{{/if}}
+		<li>
+			<a href="#search-results?keyword=${$data}">
+				${$data} 
+			</a>
+		</li>	
+    </script>
     
-	<script id="historyAndPlaylistsTemplate" type="text/html">
-		<li data-role="list-divider">Search History</li>
-		<li><a href="#search-results?keyword=Muse">Muse</a></li>
-		<li><a href="#search-results?keyword=Primus">Primus</a></li>
-		<li><a href="#search-results?keyword=Greenday">Greenday</a></li>
-		
+	<script id="playlistTemplate" type="text/html">
 		<li data-role="list-divider">Saved Playlists</li>
 		<li><a href="#saved-playlists?name=Awesome Mix">Awesome Mix</a></li>
 		<li><a href="#saved-playlists?name=Party Mix">Party Mix</a></li>
-		<li><a href="#saved-playlists?name=Slow Songs">Slow Songs</a></li>		
+		<li><a href="#saved-playlists?name=Slow Songs">Slow Songs</a></li>	
     </script>    
 </head>
 
@@ -70,7 +76,9 @@
         </div><!-- /header -->
     
         <div data-role="content">	
-             <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
+			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history() }">
+            </ul>
+            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
             </ul>
 		</div><!-- /content -->
 
@@ -79,7 +87,9 @@
 
     <div id="search-results" data-role="page">
     
-        <div data-role="header" data-position="fixed" data-bind="template: { name: 'searchTemplate' }">
+        <div data-role="header" data-position="fixed">
+        	<a href="index.html#main-page" data-icon="home" title="Home" data-theme="f" data-iconpos="notext" data-direction="reverse">Home</a>
+            <span data-bind="template: { name: 'searchTemplate' }"></span>
         </div><!-- /header -->
         
 		<div data-role="content">
@@ -90,11 +100,11 @@
  		   <div class="content-secondary">
     
                 <div data-role="collapsible" data-collapsed="true" data-theme="a">
-    
-                        <h3>Search History</h3>
-    
-                        <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
-                        </ul>
+                    <ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history() }">
+                    </ul>
+                    <br><br>
+                    <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate' }">
+                    </ul>
                 </div>
             </div>	
         </div>

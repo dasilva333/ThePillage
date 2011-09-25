@@ -14,8 +14,8 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 		// category.
 		window.u = $.mobile.path.parseUrl( data.toPage );
 		window.options = data;
-		var re = /^#search-results/;
-		console.log('page before change');
+		var re = /^#search-results/; 
+		
 		if ( u.hash.search(re) !== -1 ) {
 			// We're being asked to display the items for a specific category.
 			// Call our internal method that builds the content for the category
@@ -33,6 +33,11 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 	}
 });
 
+/*$(window).bind( "hashchange", function( e, triggered ) {
+	console.log(e);
+	console.log(triggered);
+});*/
+
 var PPL = new (function(){
 	
 	this.currentPage = 1;
@@ -44,8 +49,104 @@ var PPL = new (function(){
 		
 	this.init = function(){
 		$.mobile.page.prototype.options.domCache = true;
+        // initialize complex object
+        this.preferences = new this.preferences(this);
+        
+        this.preferences.load();
+				
 		ko.applyBindings(this);
 	}
+	
+  /*
+     * Houses all the user preference code
+     * - needs to be initialized
+     */
+    this.preferences = function(settings){
+        var currentTime = (new Date()).getTime();
+        
+        var COOKIE_NAME = "settings";
+        var COOKIE_EXPIRE_NOW = (new Date(currentTime - 2*24*60*60*1000)).toGMTString(); // 2 days ago
+        var COOKIE_EXPIRATION = (new Date(currentTime + 999*24*60*60*1000)).toGMTString(); // 999 days from now
+        
+        /*
+         * Get cookie value (private function)
+         * - loops over all the cookies and returns the one that maches
+         * @param cookie name of the cookie
+         * @return the content of the cookie [escaped]
+         */
+        var getCookieValue = function(cookie){
+            var rawCookies = document.cookie.split(";");
+            var rawCookieData = null;
+            
+            // leave if theres nothing worth searching for
+            if(typeof(cookie) === 'undefined' || cookie === "") { return; }
+            
+            // loop over all the cookies
+            for(var i in rawCookies) {
+                rawCookieData = rawCookies[i].split("=");
+                
+                // if the cookie name matches return the value of the cookie [escaped]
+                if(rawCookieData[0].replace(/(^\s+|\s+$)/g, "") == cookie) {
+                    return unescape(rawCookieData[1]);
+                }
+            }
+            
+            // nothing found
+            return;
+        };
+        
+        /*
+         * Load all the current settings from the cookie
+         */
+        this.load = function(){
+            var cookie = getCookieValue(COOKIE_NAME);
+            var settings = {};
+            console.log(cookie);
+            // load the cookie if its available
+            if(cookie){
+                settings = $.parseJSON(cookie);
+                console.log(settings);
+                try {
+					for (item in settings.history){
+						this.search.history(settings.history[item])
+					}
+                } catch(e){
+                    console.error("Error loading settings... " + e);
+                    this.preferences.erase();
+                }
+            } else {
+                // load default subreddits
+                this.search.history.push("Muse");
+				this.search.history.push("Greenday");
+				this.search.history.push("Radiohead");				
+				
+                // there was no cookie set, save it.
+                this.preferences.save();
+            }
+        }.bind(settings);
+        
+        /*
+         * Erase the cookie
+         */
+        this.erase = function(){
+            document.cookie = COOKIE_NAME + "=; expires=" + COOKIE_EXPIRE_NOW + "; path=/";
+            document.location.href = document.location.href;
+        };
+        
+        /*
+         * Save all the current settings into the cookie
+         */
+        this.save = function(){
+            document.cookie = COOKIE_NAME + "=" + escape(this.toString()) + "; expires=" + COOKIE_EXPIRATION + "; path=/";
+        }.bind(settings);
+    };	
+	
+    
+    this.toString = function(){
+        return ko.toJSON({
+            history: ko.toJS(this.search.history)
+        });
+    };		
 	
 	//yql doesnt allow for sub functions()
 	this.setActivePageTrackImages = function(data){
@@ -104,16 +205,6 @@ var PPL = new (function(){
 				$.mobile.changePage( $page, options );
 			},100);
 		}
-			
-		this.setTrackImages = function(data){
-			var curData = data.query.results.entries.result
-			var curPage = PPL.activePage();
-			$.each(curData,function(i,o){
-				if (o.album != 0){
-				   curPage.findTrackById(o.trackid).setTrackImage(o.album);
-				}
-			});
-		}
 		
 		var Track = function(item){
 			this.noAlbumImg = "http://static.pplaylist.com/img/elements/album-art.gif"
@@ -145,12 +236,7 @@ var PPL = new (function(){
 			}
 		};
 		
-		this.findTrackById = function(trackid){
-			return ko.utils.arrayFilter(this.tracks(), function(track){
-				return track.trackid == trackid ? track: null;
-			})[0];
-		};
-		
+		//These three functions find the missing albumArt and attaches it to the appropriate track
 		var fetchMissingAlbums = function(){		
 			var SQL = 'USE "http://thepillage.co.cc/mts.xml" AS musicTrackSearch;SELECT * FROM musicTrackSearch WHERE tracks = @tracks';
 			var reqURL = "http://query.yahooapis.com/v1/public/yql?format=json&q=" + escape(SQL) + "&tracks=" + JSON.stringify(missingAlbumArt);
@@ -166,6 +252,24 @@ var PPL = new (function(){
 				}
 			);
 		}
+					
+		this.setTrackImages = function(data){
+			var curData = data.query.results.entries.result;
+			//TODO figure out how to remove the PPL. to this.
+			var curPage = PPL.activePage();
+			$.each(curData,function(i,o){
+				if (o.album != 0){
+				   curPage.findTrackById(o.trackid).setTrackImage(o.album);
+				}
+			});
+		}
+				
+		this.findTrackById = function(trackid){
+			return ko.utils.arrayFilter(this.tracks(), function(track){
+				return track.trackid == trackid ? track: null;
+			})[0];
+		};
+		
 		load(keyword, number);
 	}
 	
@@ -184,9 +288,8 @@ var PPL = new (function(){
 			PPL.loadMusic(); 
 			$.mobile.hidePageLoadingMsg();	
 		},
-		submit: function(evt){
-			console.log("evt "+evt.target.searchBox.value);
-			PPL.search.searchFor("Eminem");
+		submit: function(form){
+			PPL.search.searchFor(form.searchBox.value);
 			return false;			
 		},
 		autoSubmit: function(elem){
@@ -198,7 +301,31 @@ var PPL = new (function(){
 					PPL.search.searchFor(theValue);
 				}	
 			}.bind(this),1200);	
-		}
+		},
+		history: ko.dependentObservable({
+			read: function() {
+				if (typeof this.history == "undefined")
+					this.history = ko.observableArray();
+				return this.history;
+			},
+			write: function (value) {
+				var arr = ko.utils.arrayFilter(this.history(), function(item){
+				   return item == value ? item: null;
+				});
+				if (arr.length == 0){
+					this.history.unshift(value);
+					//PPL.preferences.save();
+				}
+			}
+		}),
+		searchFor: ko.dependentObservable({
+			read: function() {
+				return location.hash.replace( /.*keyword=/, "" );
+			},
+			write: function (value) {
+				location.hash = "#search-results?keyword=" + value;
+			}
+		})
 	}
 	
 	this.loadMusic = function(){
@@ -211,6 +338,7 @@ var PPL = new (function(){
 		if (typeof keyword != "undefined" && keyword != ""){
 			//the onload attribute doesnt need to be set because the callback is hardcoded into the response (searchResultsFn)
 			$.mobile.showPageLoadingMsg();	
+			this.search.history(keyword);
 			var script = document.createElement("script"); 
 			script.setAttribute("type","text/javascript"); 
 			script.setAttribute("src",PPL.requestURL(keyword));
@@ -218,18 +346,8 @@ var PPL = new (function(){
 		}
 	}
 
-})();
-
-PPL.search.searchFor = ko.dependentObservable({
-    read: function() {
-		return location.hash.replace( /.*keyword=/, "" );
-    },
-    write: function (value) {
-		location.href = "#search-results?keyword=" + value;
-    },
-    owner: PPL
-});
-
+})(); 
+ 
 //$(document).ready(PPL.init);
 $("#main-page, #search-results").live('pagecreate',function(event){
   PPL.init();
