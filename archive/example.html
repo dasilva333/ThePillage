@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="white" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    
+    <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="images/icon.png" />
+    
+    <title>Mobile Music</title>
+    
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.css" />
+    <link rel="stylesheet" href="new_styles.css">  
+    <title>changePage JSON Sample</title>
+    <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.js"></script>
+	<script type="text/javascript" src="js/jquery.tmpl.js"></script>
+    <script type="text/javascript" src="js/knockout.js"></script>
+    <SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+
+	 $(document).ready(function () {
+		 
+	   window.viewModel = {};
+	   viewModel.itemToAdd = ko.observable("");
+	   ko.applyBindings(viewModel);
+	
+	});
+	</SCRIPT>
+    
+    
+
+	<script id="searchTemplate" type="text/html">
+		
+    </script>    
+              
+	  </head>
+
+  <body>
+  
+    <div data-role="page" id="master">
+      <div data-role="header">
+       
+      </div>
+      <div data-role="content" id="content">
+		<div>
+        	 <input type="search" name="searchBox" data-bind="value: itemToAdd, valueUpdate: 'afterkeydown'">
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

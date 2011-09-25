@@ -1,0 +1,105 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="white" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    
+    <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="images/icon.png" />
+    
+    <title>Mobile Music</title>
+    
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.css" />
+    <link rel="stylesheet" href="styles.css">  
+    <title>changePage JSON Sample</title>
+    <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.js"></script>
+	<script type="text/javascript" src="js/jquery.tmpl.js"></script>
+    <script type="text/javascript" src="js/knockout.js"></script>
+	<script type="text/javascript" src="js/main.js"></script>    
+    <script type="text/javascript" src="js/oauth.js"></script>
+    <script type="text/javascript" src="js/sha1.js"></script>
+    <script type="text/javascript" src="js/rc4.js"></script>
+	<script id="trackTemplate" type="text/html">
+		{{if PPL.activePage().tracks.indexOf($data) == 0}}
+			<li data-role="list-divider">Search Results</li>
+		{{/if}}
+		<li data-bind="click: open">
+			<a data-bind="href: $data.song_url">
+				<img data-bind="attr: { src: $data.albumImage }" />
+				<h3 data-bind="text: $data.artist"></h3>
+				<p data-bind="text: $data.title"></p>
+				<span class="ui-li-count" data-bind="text: $data.duration"></span>
+			</a>
+		</li>
+    </script>
+    
+	<script id="searchTemplate" type="text/html">
+		<form method="post" data-ajax="false" onsubmit="return PPL.search.submit();">
+			<div data-role="fieldcontain">
+				<label for="search" class="searchlabel">
+					<span class="searchlabelText">Search Songs:</span>
+					<input type="search" name="searchBox" onkeyup="PPL.search.autoSubmit(this)">
+				</label>
+			</div>
+		</form>
+    </script><!-- data-bind="value: PPL.search.searchFor, valueUpdate: 'afterkeydown'"-->
+    
+	<script id="historyAndPlaylistsTemplate" type="text/html">
+		<li data-role="list-divider">Search History</li>
+		<li><a href="#search-results?keyword=Muse">Muse</a></li>
+		<li><a href="#search-results?keyword=Primus">Primus</a></li>
+		<li><a href="#search-results?keyword=Greenday">Greenday</a></li>
+		
+		<li data-role="list-divider">Saved Playlists</li>
+		<li><a href="#saved-playlists?name=Awesome Mix">Awesome Mix</a></li>
+		<li><a href="#saved-playlists?name=Party Mix">Party Mix</a></li>
+		<li><a href="#saved-playlists?name=Slow Songs">Slow Songs</a></li>		
+    </script>    
+</head>
+
+<body>
+    
+    <div id="main-page" data-role="page" class="type-index">
+    
+        <div data-role="header" data-position="fixed" data-bind="template: { name: 'searchTemplate' }">
+        </div><!-- /header -->
+    
+        <div data-role="content">	
+             <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
+            </ul>
+		</div><!-- /content -->
+
+    </div><!-- /page -->
+         
+
+    <div id="search-results" data-role="page">
+    
+        <div data-role="header" data-position="fixed" data-bind="template: { name: 'searchTemplate' }">
+        </div><!-- /header -->
+        
+		<div data-role="content">
+            <div class="content-primary">
+                <ul data-role="listview" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }">
+                </ul>
+            </div>
+ 		   <div class="content-secondary">
+    
+                <div data-role="collapsible" data-collapsed="true" data-theme="a">
+    
+                        <h3>Search History</h3>
+    
+                        <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
+                        </ul>
+                </div>
+            </div>	
+        </div>
+        
+    </div>        
+</body>
+</html>
+

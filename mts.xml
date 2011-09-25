@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<table xmlns="http://query.yahooapis.com/v1/schema/table.xsd">
+	<meta>
+		<sampleQuery>select * from {table} where tracks = {tracks};</sampleQuery>
+	</meta>
+	<bindings>
+		<select itemPath="" produces="XML">
+			<urls>
+				<url></url>
+			</urls>
+			<inputs>
+				<key id="tracks" type="xs:string" paramType="variable" required="true" />
+			</inputs>
+			<execute>
+				<![CDATA[
+					entries = <entries></entries>;
+					tracks = eval(tracks);
+					for each (var entry in tracks){
+						searchQuery = 'select Album.Release.Image from music.track.search(1) where keyword="' + entry[1] + '" LIMIT 1';
+						albumArtQuery = y.query(searchQuery);
+						albumArtURL = albumArtQuery.results.Track.Album.Release.Image.@url + '0';
+						trackID = entry[0];
+						entries.appendChild(
+							<result>
+								<album>{albumArtURL}</album>
+								<trackid>{trackID}</trackid>
+							</result>
+						);
+					}
+					response.object = entries;
+				]]>
+			</execute>
+		</select>
+	</bindings>
+</table>
