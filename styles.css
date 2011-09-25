@@ -1,21 +1,28 @@
 
 /* Overrides on top of jQuery mobile's css */
 
-.searchLabel { vertical-align:middle; margin:1em 0; text-align:center; }
-.searchlabelText {  text-align:right; display:none !important; }
-@media screen and (min-width: 600px) {
-	.searchlabelText { display:inline-block !important }
-}
-.ui-input-search { vertical-align:middle; }
-.ui-input-search input.ui-input-text { color:white; }
-.ui-field-contain { margin:0.7em 0; padding:0.8em 0; }
+
+/* this affects the background*/
 .ui-body-c { 
 	background-color: #333;
 	background-image: url("images/bgPattern.gif");
 	background-repeat: repeat;
 }
-
+/* This Affects the search bar */
 .ui-bar-a, .ui-bar-a input, .ui-bar-a select, .ui-bar-a textarea, .ui-bar-a button { text-align:center }
+.ui-input-search { vertical-align:middle; }
+.ui-input-search input.ui-input-text { color:white; }
+.ui-field-contain { margin:0.7em 0; padding:0.8em 0; }
+/* Hide the Search label when the screen is too small */
+.searchLabel { vertical-align:middle; margin:1em 0; text-align:center; }
+.searchlabelText {  text-align:right; display:none !important; }
+@media screen and (min-width: 600px) {
+	.searchlabelText { display:inline-block !important }
+}
+/* this affects the search-results page */
+#search-results .content-primary, #search-results .content-secondary { margin:0; }
+#search-results .content-primary{ width:60%; }
+#search-results .content-secondary, #search-results .content-secondary .ui-collapsible-contain { padding:0; }
 
 /* 
 

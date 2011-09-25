@@ -33,11 +33,6 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 	}
 });
 
-/*$(window).bind( "hashchange", function( e, triggered ) {
-	console.log(e);
-	console.log(triggered);
-});*/
-
 var PPL = new (function(){
 	
 	this.currentPage = 1;
@@ -46,16 +41,6 @@ var PPL = new (function(){
 		tracks: ko.observableArray()
 	});
 	this.trackPages = ko.observableArray();
-		
-	this.init = function(){
-		$.mobile.page.prototype.options.domCache = true;
-        // initialize complex object
-        this.preferences = new this.preferences(this);
-        
-        this.preferences.load();
-				
-		ko.applyBindings(this);
-	}
 	
   /*
      * Houses all the user preference code
@@ -101,11 +86,9 @@ var PPL = new (function(){
         this.load = function(){
             var cookie = getCookieValue(COOKIE_NAME);
             var settings = {};
-            console.log(cookie);
             // load the cookie if its available
             if(cookie){
                 settings = $.parseJSON(cookie);
-                console.log(settings);
                 try {
 					for (item in settings.history){
 						this.search.history(settings.history[item])
@@ -116,9 +99,9 @@ var PPL = new (function(){
                 }
             } else {
                 // load default subreddits
-                this.search.history.push("Muse");
-				this.search.history.push("Greenday");
-				this.search.history.push("Radiohead");				
+                this.search.history("Muse");
+				this.search.history("Greenday");
+				this.search.history("Radiohead");				
 				
                 // there was no cookie set, save it.
                 this.preferences.save();
@@ -203,7 +186,7 @@ var PPL = new (function(){
 				// Now call changePage() and tell it to switch to
 				// the page we just modified.
 				$.mobile.changePage( $page, options );
-			},100);
+			},250);
 		}
 		
 		var Track = function(item){
@@ -345,10 +328,29 @@ var PPL = new (function(){
 			document.body.appendChild(script);
 		}
 	}
-
+	
+	this.pageLoad = function(){
+		$.mobile.page.prototype.options.domCache = true;
+	    
+		// initialize complex object 
+		if (typeof this.preferences == "function")
+	        this.preferences = new this.preferences(this);
+        
+        this.preferences.load();
+				
+		ko.applyBindings(this);		
+	}.bind(this);
+	
+	this.init = function(){
+		
+	}.bind(this);
+		
 })(); 
  
+//
+$("#main-page, #search-results").live('pagecreate',PPL.pageLoad);
+
 //$(document).ready(PPL.init);
-$("#main-page, #search-results").live('pagecreate',function(event){
-  PPL.init();
-});
+
+
+
