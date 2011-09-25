@@ -14,9 +14,10 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 		// category.
 		window.u = $.mobile.path.parseUrl( data.toPage );
 		window.options = data;
-		var re = /^#search-results/; 
+		var sr = /^#search-results/; 
+		var tv = /^#track-view/; 
 		
-		if ( u.hash.search(re) !== -1 ) {
+		if ( u.hash.search(sr) !== -1 ) {
 			// We're being asked to display the items for a specific category.
 			// Call our internal method that builds the content for the category
 			// on the fly based on our in-memory category data structure.
@@ -29,6 +30,12 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			// Make sure to tell changepage we've handled this call so it doesn't
 			// have to do anything.
 			e.preventDefault();
+		}
+		else if ( u.hash.search(tv) !== -1 ){
+			PPL.finishPageLoad();
+			
+			e.preventDefault();
+			
 		}
 	}
 });
@@ -161,31 +168,7 @@ var PPL = new (function(){
 			fetchMissingAlbums();
 			
 			setTimeout(function(){
-				//jquery mobile method
-				pageSelector = u.hash.replace( /\?.*$/, "" );
-				// Get the page we are going to dump our content into.
-				var $page = $( pageSelector );
-				var $content = $page.children( ":jqmData(role=content)" );
-				
-				// Pages are lazily enhanced. We call page() on the page
-				// element to make sure it is always enhanced before we
-				// attempt to enhance the listview markup we just injected.
-				// Subsequent calls to page() are ignored since a page/widget
-				// can only be enhanced once.
-				$page.page();
-			
-				// Enhance the listview we just injected.
-				$content.find( ":jqmData(role=listview)" ).listview('refresh');
-			
-				// We don't want the data-url of the page we just modified
-				// to be the url that shows up in the browser's location field,
-				// so set the dataUrl option to the URL for the category
-				// we just loaded.
-				options.dataUrl = u.href;
-			
-				// Now call changePage() and tell it to switch to
-				// the page we just modified.
-				$.mobile.changePage( $page, options );
+				PPL.finishPageLoad();
 			},250);
 		}
 		
@@ -340,6 +323,34 @@ var PPL = new (function(){
 				
 		ko.applyBindings(this);		
 	}.bind(this);
+	
+	this.finishPageLoad = function(){
+		//jquery mobile method
+		pageSelector = u.hash.replace( /\?.*$/, "" );
+		// Get the page we are going to dump our content into.
+		var $page = $( pageSelector );
+		var $content = $page.children( ":jqmData(role=content)" );
+		
+		// Pages are lazily enhanced. We call page() on the page
+		// element to make sure it is always enhanced before we
+		// attempt to enhance the listview markup we just injected.
+		// Subsequent calls to page() are ignored since a page/widget
+		// can only be enhanced once.
+		$page.page();
+	
+		// Enhance the listview we just injected.
+		$content.find( ":jqmData(role=listview)" ).listview('refresh');
+	
+		// We don't want the data-url of the page we just modified
+		// to be the url that shows up in the browser's location field,
+		// so set the dataUrl option to the URL for the category
+		// we just loaded.
+		options.dataUrl = u.href;
+	
+		// Now call changePage() and tell it to switch to
+		// the page we just modified.
+		$.mobile.changePage( $page, options );
+	}
 	
 	this.init = function(){
 		

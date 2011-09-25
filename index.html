@@ -39,13 +39,14 @@
 		{{if PPL.activePage().tracks.indexOf($data) == 0}}
 			<li data-role="list-divider">Search Results</li>
 		{{/if}}
-		<li data-bind="click: open">
+		<li>
 			<a href="${$data.song_url}">
 				<img data-bind="attr: { src: $data.albumImage }" />
 				<h3>${$data.artist}</h3>
 				<p>${$data.title}</p>
 				<span class="ui-li-count">${$data.duration}</span>
-			</a>
+			</a>	
+			<a href="#track-view?trackid=${$data.trackid}" data-rel="dialog" data-transition="pop">More Options</a>			
 		</li>
     </script>
     
@@ -107,8 +108,26 @@
                 </div>
             </div>	
         </div>
-        
-    </div>        
+    </div>
+    
+
+    <div id="track-view" data-role="page">
+
+		<div data-role="header" data-theme="a">
+			<h1>Other Options</h1>
+		</div><!-- /header -->
+
+		<div data-role="content" data-theme="a">
+			<a href="index.html" data-role="button" data-rel="back" data-theme="b">Download</a>
+            <a href="index.html" data-role="button" data-rel="back" data-theme="b">Add to Playlist</a>
+			<a href="index.html" data-role="button" data-rel="back">Find More By This Artist</a>
+            <a href="index.html" data-role="button" data-rel="back">Share Music Link</a>
+			<a href="index.html" data-role="button" data-rel="back">Go Back</a>
+		</div>
+
+	</div><!-- /page -->
+    
+    
 </body>
 </html>
 
