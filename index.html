@@ -23,6 +23,7 @@
     <script type="text/javascript" src="js/oauth.js"></script>
     <script type="text/javascript" src="js/sha1.js"></script>
     <script type="text/javascript" src="js/rc4.js"></script>
+    <script type='text/javascript' src='js/jquery.urlshortener.js'></script>
     
 	<script id="searchTemplate" type="text/html">
 		<form method="post" data-ajax="false" onsubmit="return PPL.search.submit(this);">
@@ -46,7 +47,7 @@
 				<p>${$data.title}</p>
 				<span class="ui-li-count">${$data.duration}</span>
 			</a>	
-			<a href="#track-view?trackid=${$data.trackid}" data-rel="dialog" data-transition="pop">More Options</a>			
+			<a data-bind="click: setActiveTrack" href="#track-view?trackid=${$data.trackid}" data-rel="dialog" data-transition="pop">More Options</a>			
 		</li>
     </script>
     
@@ -66,6 +67,17 @@
 		<li><a href="#saved-playlists?name=Awesome Mix">Awesome Mix</a></li>
 		<li><a href="#saved-playlists?name=Party Mix">Party Mix</a></li>
 		<li><a href="#saved-playlists?name=Slow Songs">Slow Songs</a></li>	
+    </script>
+    
+    
+	<script id="navbarTemplate" type="text/html">
+			<div data-role="navbar">
+                <ul>
+                    <li><a href="index.html#main-page">Home</a></li>
+                    <li><a href="index.html#search-page" class="ui-btn-active ui-state-persist">Search</a></li>
+                    <li><a href="index.html#playlist-page">Playlists</a></li>
+                </ul>
+            </div>
     </script>    
 </head>
 
@@ -88,13 +100,13 @@
 
     <div id="search-results" data-role="page">
     
-        <div data-role="header" data-position="fixed"> 
+        <div data-role="header"> 
             <span data-bind="template: { name: 'searchTemplate' }"></span>
         </div><!-- /header -->
         
 		<div data-role="content">
             <div class="content-primary">
-                <ul data-role="listview" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }">
+                <ul data-role="listview" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }" data-filter="true" data-filter-placeholder="Search within results" data-filter-theme="d">
                 </ul>
             </div>
  		   <div class="content-secondary">
@@ -108,6 +120,9 @@
                 </div>
             </div>	
         </div>
+        
+        <div data-role="footer" data-position="fixed" data-id="navbar" data-bind="template: { name: 'navbarTemplate' }">
+        </div><!-- /footer -->        
     </div>
     
 
@@ -118,13 +133,32 @@
 		</div><!-- /header -->
 
 		<div data-role="content" data-theme="a">
-			<a href="index.html" data-role="button" data-rel="back" data-theme="b">Download</a>
+        	<div data-role="content">
+                <ul data-role="listview" data-dividertheme="a" data-theme="a">
+                    <li>
+                        <img data-bind="attr: { src: PPL.activePage().activeTrack().albumImage() }" />
+                        <h3 data-bind="text: PPL.activePage().activeTrack().artist"></h3>
+                        <p data-bind="text: PPL.activePage().activeTrack().title"></p>
+                        <span class="ui-li-count" data-bind="text: PPL.activePage().activeTrack().duration"></span>
+                    </li>
+                </ul>
+            </div>
+			<a data-bind="attr: { href: PPL.activePage().activeTrack().song_url }" data-role="button" data-theme="b">Download</a>
             <a href="index.html" data-role="button" data-rel="back" data-theme="b">Add to Playlist</a>
-			<a href="index.html" data-role="button" data-rel="back">Find More By This Artist</a>
-            <a href="index.html" data-role="button" data-rel="back">Share Music Link</a>
+			<a data-role="button" onclick="PPL.activePage().activeTrack().promptMoreOfArtist()">Find More By This Artist</a>
+            <a data-role="button" onclick="PPL.activePage().activeTrack().fetchShortUrl()">Share Music Link</a>
+            <span data-bind="visible: PPL.activePage().activeTrack().short_url() != ''">
+                <div data-role="fieldcontain">
+                    <label for="share">Copy To Share:</label>
+                    <input type="text" id="share" data-bind="value: PPL.activePage().activeTrack().short_url()"  />
+                </div>
+            </span>
 			<a href="index.html" data-role="button" data-rel="back">Go Back</a>
 		</div>
 
+        <div data-role="footer" data-position="fixed" data-id="navbar" data-bind="template: { name: 'navbarTemplate' }">
+        </div><!-- /footer -->        
+        
 	</div><!-- /page -->
     
     

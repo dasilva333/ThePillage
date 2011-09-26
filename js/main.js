@@ -16,6 +16,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 		window.options = data;
 		var sr = /^#search-results/; 
 		var tv = /^#track-view/; 
+		var mp = /^#main-page/; 
 		
 		if ( u.hash.search(sr) !== -1 ) {
 			// We're being asked to display the items for a specific category.
@@ -31,11 +32,9 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			// have to do anything.
 			e.preventDefault();
 		}
-		else if ( u.hash.search(tv) !== -1 ){
+		else if ( u.hash.search(tv) !== -1 ||  u.hash.search(mp) !== -1 ){
 			PPL.finishPageLoad();
-			
 			e.preventDefault();
-			
 		}
 	}
 });
@@ -43,12 +42,16 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 var PPL = new (function(){
 	
 	this.currentPage = 1;
+	this.showShortUrl = ko.observable(false); 
 	this.activePage = ko.observable({
 		//todo remove this dependency for the foreach template
-		tracks: ko.observableArray()
+		tracks: ko.observableArray(),
+		activeTrack: ko.observable({
+			albumImage: ko.observable(""),
+			short_url: ko.observable("")
+		})
 	});
 	this.trackPages = ko.observableArray();
-	
   /*
      * Houses all the user preference code
      * - needs to be initialized
@@ -158,7 +161,10 @@ var PPL = new (function(){
 		this.pageNumber = ko.observable();
 		this.keyword = ko.observable();
 		this.tracks = ko.observableArray();
-		
+		this.activeTrack = ko.observable({
+			albumImage: ko.observable(""),
+			short_url: ko.observable("")
+		});
 		var load = function(keyword, number){
 			//add the results to the page
 			for(var index in PPL.search.trackdata)
@@ -175,13 +181,19 @@ var PPL = new (function(){
 		var Track = function(item){
 			this.noAlbumImg = "http://static.pplaylist.com/img/elements/album-art.gif"
 			this.artist = item.artist;
-			this.title = item.title;
+			this.title = unescape(item.title);
 			this.albumImage = ko.observable(item.album);
 			this.trackid = item.trackid;
 			this.duration = secondsToDuration(item.duration);
 			//encryption key for the lulz
 			this.song_url = decrypt(item.song_url,"Error, this track is not valid!"); 
+			this.short_url = ko.observable("");
 			
+			this.fetchShortUrl = function(){
+				$.shortenUrl(this.song_url, function(short_url) {
+					this.short_url(this.artist + " - " + this.title + ": " + short_url);
+				}.bind(this));
+			}
 			this.clean = function(str){
 				//increase chances of returning a match by removing extra unessecary parts to a song name
 				return str.replace("&amp;","and").replace("&","and").toLowerCase().split("(")[0].split("feat")[0].split("ft.")[0].split("-")[0].split("f. ")[0].split(" ft ")[0];
@@ -199,6 +211,14 @@ var PPL = new (function(){
 			
 			this.open = function(){
 				location.href = this.song_url;	
+			}
+			this.setActiveTrack = function(){
+				//TODO fix the PPL usage here... somehow
+				PPL.activePage().activeTrack(this);
+			}
+			this.promptMoreOfArtist = function(){
+				if (confirm("Would you like to search more songs by " + this.artist + "?"))	
+					location.href = "#search-results?keyword=" + this.artist;
 			}
 		};
 		
@@ -266,7 +286,7 @@ var PPL = new (function(){
 					isRun = true;
 					PPL.search.searchFor(theValue);
 				}	
-			}.bind(this),1200);	
+			}.bind(this),3000);	
 		},
 		history: ko.dependentObservable({
 			read: function() {
@@ -279,8 +299,9 @@ var PPL = new (function(){
 				   return item == value ? item: null;
 				});
 				if (arr.length == 0){
-					this.history.unshift(value);
-					//PPL.preferences.save();
+					this.history.unshift(unescape(value));
+					if (typeof PPL.preferences == "object")
+						PPL.preferences.save();
 				}
 			}
 		}),
@@ -359,7 +380,7 @@ var PPL = new (function(){
 })(); 
  
 //
-$("#main-page, #search-results").live('pagecreate',PPL.pageLoad);
+$("#main-page, #search-results, #track-view").live('pagecreate',PPL.pageLoad);
 
 //$(document).ready(PPL.init);
 
