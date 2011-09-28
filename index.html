@@ -15,7 +15,7 @@
     
     <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.css" />
     <link rel="stylesheet" href="styles.css">  
-    <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.mobile.js"></script>
 	<script type="text/javascript" src="js/jquery.tmpl.js"></script>
     <script type="text/javascript" src="js/knockout.js"></script>
@@ -47,18 +47,20 @@
 				<p>${$data.title}</p>
 				<span class="ui-li-count">${$data.duration}</span>
 			</a>	
-			<a data-bind="click: setActiveTrack" href="#track-view?trackid=${$data.trackid}" data-rel="dialog" data-transition="pop">More Options</a>			
+			<a data-bind="click: setActiveTrack" href="#track-view?linkid=${$data.linkid}" data-rel="dialog" data-transition="pop">More Options</a>			
 		</li>
     </script>
     
 	<script id="historyTemplate" type="text/html">
-		{{if PPL.search.history().indexOf($data) == 0}}
+		{{if PPL.searchHistory.getItems().indexOf($data) == 0}}
 			<li data-role="list-divider">Search History</li>
 		{{/if}}
 		<li>
-			<a href="#search-results?keyword=${$data}">
-				${$data} 
+			<a href="#search-results?keyword=${$data.keyword}">
+				${$data.keyword} 
+				<span class="ui-li-count">${$data.count}</span>
 			</a>
+			<a data-bind="click: remove" data-icon="delete">Delete From History</a>
 		</li>	
     </script>
     
@@ -89,7 +91,7 @@
         </div><!-- /header -->
     
         <div data-role="content">	
-			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history() }">
+			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
             </ul>
             <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
             </ul>
@@ -112,7 +114,7 @@
  		   <div class="content-secondary">
     
                 <div data-role="collapsible" data-collapsed="true" data-theme="a">
-                    <ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history() }">
+                    <ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
                     </ul>
                     <br><br>
                     <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate' }">
@@ -133,24 +135,24 @@
 		</div><!-- /header -->
 
 		<div data-role="content" data-theme="a">
-        	<div data-role="content">
+        	<div class="trackPlaceholder">
                 <ul data-role="listview" data-dividertheme="a" data-theme="a">
                     <li>
-                        <img data-bind="attr: { src: PPL.activePage().activeTrack().albumImage() }" />
-                        <h3 data-bind="text: PPL.activePage().activeTrack().artist"></h3>
-                        <p data-bind="text: PPL.activePage().activeTrack().title"></p>
-                        <span class="ui-li-count" data-bind="text: PPL.activePage().activeTrack().duration"></span>
+                        <img data-bind="attr: { src: PPL.activeTrack().albumImage() }" />
+                        <h3 data-bind="text: PPL.activeTrack().artist"></h3>
+                        <p data-bind="text: PPL.activeTrack().title"></p>
+                        <span class="ui-li-count" data-bind="text: PPL.activeTrack().duration"></span>
                     </li>
                 </ul>
             </div>
-			<a data-bind="attr: { href: PPL.activePage().activeTrack().song_url }" data-role="button" data-theme="b">Download</a>
+			<a data-bind="attr: { href: PPL.activeTrack().song_url }" data-role="button" data-theme="b">Download</a>
             <a href="index.html" data-role="button" data-rel="back" data-theme="b">Add to Playlist</a>
-			<a data-role="button" onclick="PPL.activePage().activeTrack().promptMoreOfArtist()">Find More By This Artist</a>
-            <a data-role="button" onclick="PPL.activePage().activeTrack().fetchShortUrl()">Share Music Link</a>
-            <span data-bind="visible: PPL.activePage().activeTrack().short_url() != ''">
+			<a data-role="button" onclick="PPL.activeTrack().promptMoreOfArtist()">Find More By This Artist</a>
+            <a data-role="button" onclick="PPL.activeTrack().fetchShortUrl()">Share Music Link</a>
+            <span data-bind="visible: PPL.activeTrack().short_url() != ''">
                 <div data-role="fieldcontain">
                     <label for="share">Copy To Share:</label>
-                    <input type="text" id="share" data-bind="value: PPL.activePage().activeTrack().short_url()"  />
+                    <input type="text" id="share" data-bind="value: PPL.activeTrack().short_url()"  />
                 </div>
             </span>
 			<a href="index.html" data-role="button" data-rel="back">Go Back</a>

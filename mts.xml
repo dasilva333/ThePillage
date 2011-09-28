@@ -18,7 +18,8 @@
 					for each (var entry in tracks){
 						searchQuery = 'select Album.Release.Image from music.track.search(1) where keyword="' + entry[1] + '" LIMIT 1';
 						albumArtQuery = y.query(searchQuery);
-						albumArtURL = albumArtQuery.results.Track.Album.Release.Image.@url + '0';
+						albumArtURL = (albumArtQuery.results.Track.Album.Release.Image.@url).toString();
+						albumArtURL = albumArtURL.substring(0,albumArtURL.length-2) + "80"
 						trackID = entry[0];
 						entries.appendChild(
 							<result>

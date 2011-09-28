@@ -23,6 +23,8 @@
 #search-results .content-primary, #search-results .content-secondary { margin:0; }
 #search-results .content-secondary, #search-results .content-secondary .ui-collapsible-contain { padding:0; }
 
+/* this is for the track-view */
+.trackPlaceholder { margin-bottom:20px }
 /* 
 
 The following css came from jqueryMobile.com to add support for primary and secondary views
