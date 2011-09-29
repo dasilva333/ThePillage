@@ -111,8 +111,8 @@ var PPL = new (function(){
 		
 	var TrackPage = function(keyword, number){
 		var trackpage = this;
-		this.pageNumber = ko.observable();
-		this.keyword = ko.observable();
+		this.pageNumber = number;
+		this.keyword = keyword;
 		this.tracks = ko.observableArray();
 
 		var load = function(keyword, number){
@@ -218,7 +218,8 @@ var PPL = new (function(){
 		}
 		
 		this.open = function(){
-			location.href = this.song_url;	
+			PPL.audioPlayer.jPlayer("setMedia", { mp3 : this.song_url }).jPlayer("play");
+			return false;
 		}
 		this.setActiveTrack = function(){
 			//TODO fix the PPL usage here... somehow
@@ -278,9 +279,9 @@ var PPL = new (function(){
 		var items =  ko.observableArray();
 		
 		var load = function(items){
-			for (index in items){
+			$.each(items,function(index){
 				this.addItem(items[index]);
-			}
+			}.bind(this));
 		}.bind(this);
 		
 		var Item = function(item){
@@ -301,8 +302,8 @@ var PPL = new (function(){
 				   return item.keyword == value.keyword ? item: null;
 				});
 				if (arr.length == 0){
+					
 					items.unshift(new Item(value));
-					this.refresh();	
 				}
 				else {
 					arr[0].count(arr[0].count()+1);
@@ -312,6 +313,7 @@ var PPL = new (function(){
 		this.getItems = function(){
 			return items();	
 		}
+		
 		this.refresh = function(){
 			//TODO improve or reduce this stuff when adding an item
 			/*$page = $( "#main-page, #search-results" ),
@@ -319,6 +321,8 @@ var PPL = new (function(){
 			$page.page();
 			$content.find( ":jqmData(role=listview)" ).listview();
 			$content.find( ":jqmData(role=listview)" ).listview("refresh");	*/
+			
+			//$("ul").listview('refresh');
 			if (typeof PPL.preferences == "object")
 				PPL.preferences.save();
 		}
@@ -352,8 +356,9 @@ var PPL = new (function(){
 		if (typeof keyword != "undefined" && keyword != ""){
 			//the onload attribute doesnt need to be set because the callback is hardcoded into the response (searchResultsFn)
 			$.mobile.showPageLoadingMsg();	
-			if (typeof PPL.searchHistory == "object")
+			if (typeof PPL.searchHistory == "object"){
 				PPL.searchHistory.addItem(keyword);
+			}
 			this.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1");	
 		}
 	}
@@ -388,6 +393,46 @@ var PPL = new (function(){
 				this.preferences = new this.preferences(this);
 			
 			this.preferences.load();
+						
+			PPL.audioPlayer = $("#jquery_jplayer_1").jPlayer({
+				swfPath: "swf",
+				supplied: "mp3",
+				wmode: "window"
+			});
+			
+			$('#jquery_jplayer_1').jPlayer({
+					swfPath: 'swf',
+					solution: 'html, flash',
+					supplied: 'mp3',
+					preload: 'metadata',
+					volume: 0.8,
+					muted: false,
+					backgroundColor: '#000000',
+					cssSelectorAncestor: '#jp_container_1',
+					cssSelector: {
+					videoPlay: '.jp-video-play',
+					play: '.jp-play',
+					pause: '.jp-pause',
+					stop: '.jp-stop',
+					seekBar: '.jp-seek-bar',
+					playBar: '.jp-play-bar',
+					mute: '.jp-mute',
+					unmute: '.jp-unmute',
+					volumeBar: '.jp-volume-bar',
+					volumeBarValue: '.jp-volume-bar-value',
+					volumeMax: '.jp-volume-max',
+					currentTime: '.jp-current-time',
+					duration: '.jp-duration',
+					fullScreen: '.jp-full-screen',
+					restoreScreen: '.jp-restore-screen',
+					repeat: '.jp-repeat',
+					repeatOff: '.jp-repeat-off',
+					gui: '.jp-gui',
+					noSolution: '.jp-no-solution'
+				},
+				errorAlerts: false,
+				warningAlerts: false
+			});
 		}
 		ko.applyBindings(this);	
 		
@@ -411,6 +456,9 @@ var PPL = new (function(){
 		// Enhance the listview we just injected.
 		$content.find( ":jqmData(role=listview)" ).listview('refresh');
 	
+		//Enhance the footer/navbars
+		$(":jqmData(role='navbar')").navbar();	
+		
 		// We don't want the data-url of the page we just modified
 		// to be the url that shows up in the browser's location field,
 		// so set the dataUrl option to the URL for the category
@@ -422,6 +470,10 @@ var PPL = new (function(){
 		$.mobile.changePage( $page, options );
 	}
 	
+	this.refreshNavbar = function(){
+		console.log("refresh navbar");
+		
+	}
 	    
     this.toString = function(){
         return ko.toJSON({

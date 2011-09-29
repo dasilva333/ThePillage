@@ -5,7 +5,7 @@
 /* this affects the background*/
 .ui-body-c { 
 	background-color: #333;
-	background-image: url("images/bgPattern.gif");
+	background-image: url("../images/bgPattern.gif");
 	background-repeat: repeat;
 }
 /* This Affects the search bar */

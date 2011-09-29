@@ -14,16 +14,19 @@
     <title>Mobile Music</title>
     
     <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b3/jquery.mobile-1.0b3.min.css" />
-    <link rel="stylesheet" href="styles.css">  
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/jplayer.blue.monday.css">  
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.mobile.js"></script>
 	<script type="text/javascript" src="js/jquery.tmpl.js"></script>
+    <script type='text/javascript' src="js/jquery.urlshortener.js"></script>
+    <script type='text/javascript' src="js/jquery.jplayer.min.js"></script>    
     <script type="text/javascript" src="js/knockout.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>    
     <script type="text/javascript" src="js/oauth.js"></script>
     <script type="text/javascript" src="js/sha1.js"></script>
     <script type="text/javascript" src="js/rc4.js"></script>
-    <script type='text/javascript' src='js/jquery.urlshortener.js'></script>
+
     
 	<script id="searchTemplate" type="text/html">
 		<form method="post" data-ajax="false" onsubmit="return PPL.search.submit(this);">
@@ -37,11 +40,8 @@
     </script>
     
 	<script id="trackTemplate" type="text/html">
-		{{if PPL.activePage().tracks.indexOf($data) == 0}}
-			<li data-role="list-divider">Search Results</li>
-		{{/if}}
 		<li>
-			<a href="${$data.song_url}">
+			<a href="${$data.song_url}" data-bind="click: open">
 				<img data-bind="attr: { src: $data.albumImage }" />
 				<h3>${$data.artist}</h3>
 				<p>${$data.title}</p>
@@ -52,9 +52,6 @@
     </script>
     
 	<script id="historyTemplate" type="text/html">
-		{{if PPL.searchHistory.getItems().indexOf($data) == 0}}
-			<li data-role="list-divider">Search History</li>
-		{{/if}}
 		<li>
 			<a href="#search-results?keyword=${$data.keyword}">
 				${$data.keyword} 
@@ -73,13 +70,13 @@
     
     
 	<script id="navbarTemplate" type="text/html">
-			<div data-role="navbar">
-                <ul>
-                    <li><a href="index.html#main-page">Home</a></li>
-                    <li><a href="index.html#search-page" class="ui-btn-active ui-state-persist">Search</a></li>
-                    <li><a href="index.html#playlist-page">Playlists</a></li>
-                </ul>
-            </div>
+		<div data-role="navbar">	
+			<ul>
+				<li><a href="index.html#main-page">Home</a></li>
+				<li><a href="index.html#search-results?keyword=${ PPL.activePage().keyword }" class="ui-btn-active ui-state-persist">Search</a></li>
+				<li><a href="index.html#playlist-page">Playlists</a></li>
+			</ul>
+		</div>
     </script>    
 </head>
 
@@ -91,7 +88,8 @@
         </div><!-- /header -->
     
         <div data-role="content">	
-			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
+			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" 
+            	data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems(), afterAdd: PPL.searchHistory.refresh, beforeRemove: PPL.searchHistory.refresh  }">
             </ul>
             <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
             </ul>
@@ -101,29 +99,75 @@
          
 
     <div id="search-results" data-role="page">
-    
+    	
+        <div id="jquery_jplayer_1" class="jp-jplayer"></div>
+
         <div data-role="header"> 
             <span data-bind="template: { name: 'searchTemplate' }"></span>
         </div><!-- /header -->
         
 		<div data-role="content">
             <div class="content-primary">
+				<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search Results</li></ul>
                 <ul data-role="listview" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }" data-filter="true" data-filter-placeholder="Search within results" data-filter-theme="d">
                 </ul>
             </div>
  		   <div class="content-secondary">
     
                 <div data-role="collapsible" data-collapsed="true" data-theme="a">
-                    <ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
+					<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search History</li></ul>
+                    <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
                     </ul>
-                    <br><br>
                     <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate' }">
                     </ul>
                 </div>
             </div>	
         </div>
         
-        <div data-role="footer" data-position="fixed" data-id="navbar" data-bind="template: { name: 'navbarTemplate' }">
+        <div data-role="footer" data-position="fixed" data-id="navbar">
+        		<div style="text-align:center">
+                    <div id="jp_container_1" data-role="none" class="jp-audio">
+                        <div class="jp-type-single">
+                            <div class="jp-gui jp-interface">
+                                <ul class="jp-controls">
+            
+                                    <li><a href="javascript:;" class="jp-play" tabindex="1">play</a></li>
+                                    <li><a href="javascript:;" class="jp-pause" tabindex="1">pause</a></li>
+                                    <li><a href="javascript:;" class="jp-stop" tabindex="1">stop</a></li>
+                                    <li><a href="javascript:;" class="jp-mute" tabindex="1" title="mute">mute</a></li>
+                                    <li><a href="javascript:;" class="jp-unmute" tabindex="1" title="unmute">unmute</a></li>
+                                    <li><a href="javascript:;" class="jp-volume-max" tabindex="1" title="max volume">max volume</a></li>
+            
+                                </ul>
+                                <div class="jp-progress">
+                                    <div class="jp-seek-bar">
+                                        <div class="jp-play-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="jp-volume-bar">
+                                    <div class="jp-volume-bar-value"></div>
+                                </div>
+            
+                                <div class="jp-time-holder">
+                                    <div class="jp-current-time"></div>
+                                    <div class="jp-duration"></div>
+            
+                                    <ul class="jp-toggles">
+                                        <li><a href="javascript:;" class="jp-repeat" tabindex="1" title="repeat">repeat</a></li>
+                                        <li><a href="javascript:;" class="jp-repeat-off" tabindex="1" title="repeat off">repeat off</a></li>
+                                    </ul>
+            
+                                </div>
+                            </div>
+                            <div class="jp-no-solution">
+            
+                                <span>Update Required</span>
+                                To play the media you will need to either update your browser to a recent version or update your <a href="http://get.adobe.com/flashplayer/" target="_blank">Flash plugin</a>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div data-bind="template: { name: 'navbarTemplate' }"></div>
         </div><!-- /footer -->        
     </div>
     
@@ -163,7 +207,7 @@
         
 	</div><!-- /page -->
     
-    
+	<div id="jp_container_1" class="jp-audio"></div>
 </body>
 </html>
 
