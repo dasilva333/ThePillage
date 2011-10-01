@@ -5,6 +5,7 @@ var RemoteLogger = {
 }
 
 var PPL = new (function(){
+	var context = this;
 	this.isInit	= false;
 	this.currentPage = 1;
 	this.showShortUrl = ko.observable(false); 
@@ -61,6 +62,7 @@ var PPL = new (function(){
 	
 	this.missingAlbumArt = new (function(){
 		var missingAlbumArt	= [];
+		var missingAlbums = this;
 		
 		//These three functions find the missing albumArt and attaches it to the appropriate track
 		this.fetch = function(callback){
@@ -91,14 +93,14 @@ var PPL = new (function(){
 		this.setTrackImages = function(data){
 			var curData = data.query.results.entries.result;
 			//TODO figure out how to remove the PPL. to this.
-			var curPage = PPL.activePage();
+			var curPage = this.activePage();
 			$.each(curData,function(i,o){
 				if (o.album.length > 3){
 				   curPage.findTrackById(o.trackid).setTrackImage(o.album);
 				}
 			});
-			this.reset();
-		}
+			missingAlbums.reset();
+		}.bind(context);
 		
 		this.setActiveTrackImage = function(data){
 			PPL.activeTrack().albumImage(data.query.results.entries.result.album);
@@ -159,25 +161,28 @@ var PPL = new (function(){
 	this.player = {
 		playWhenReady: function(){}
 	};
-	this.search = {
-		searchVersion: "",
-		searchTerm: "",
-		trackdata: null, 
+	this.search = new (function(){
+		var search = this;
+		this.searchVersion = "",
+		this.searchTerm = "";
+		this.trackdata = null;
+			
 		//This function gets called automatically due to the Playlist.com API
-		searchResultsFn: function(){
-				
-				if (this.activePageName == "search-results")
-					this.loadTracks(); 
-				else if (this.activePageName == "track-view")
-					this.loadTrackView();
-
+		this.searchResultsFn = function(){
+			console.log("searchResultsFn");
+			if (this.activePageName == "search-results")
+				search.loadTracks(); 
+			else if (this.activePageName == "track-view")
+				search.loadTrackView();
 			$.mobile.hidePageLoadingMsg();	
-		}.bind(this),
-		submit: function(form){
+		}.bind(context)
+		
+		this.submit = function(form){
 			PPL.search.searchFor(form.searchBox.value);
 			return false;			
-		},
-		autoSubmit: function(elem){
+		};
+		
+		this.autoSubmit = function(elem){
 			var theValue = elem.value;
 			window.isRun = false;
 			setTimeout(function(){
@@ -186,8 +191,9 @@ var PPL = new (function(){
 					PPL.search.searchFor(theValue);
 				}	
 			}.bind(this),3000);	
-		},
-		searchFor: ko.dependentObservable({
+		};
+		
+		this.searchFor = ko.dependentObservable({
 			read: function() {
 				return location.hash.replace( /.*keyword=/, "" );
 			},
@@ -195,118 +201,115 @@ var PPL = new (function(){
 				location.hash = "#search-results?keyword=" + value;
 			}
 		})
-	}
+		
+		this.loadTracks = function(){
+			this.activePage(new TrackPage(search.searchFor(), this.currentPage));		
+		}.bind(context);
 	
-	this.searchHistory = new (function(){
-		var KEY_NAME = "history";
-		var DEFAULT_HISTORY = ["Muse","Radiohead"];
-		var items =  ko.observableArray();
-		var history = $.jStorage.get(KEY_NAME, DEFAULT_HISTORY);
+		this.tracks = function(keyword){
+			if (typeof keyword != "undefined" && keyword != ""){
+				//the onload attribute doesnt need to be set because the callback is hardcoded into the response (searchResultsFn)
+				$.mobile.showPageLoadingMsg();	
+				if (typeof this.history == "object"){
+					this.history.addItem(keyword);
+				}
+				this.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1");	
+			}
+		}
 		
-		var load = function(items){
-			console.log(items);
-			$.each(items,function(index){
-				this.addItem(items[index]);
-			}.bind(this));
-		}.bind(this);
+		this.track = function(keyword){
+			if (this.activeTrack().linkid != keyword){
+				$.mobile.showPageLoadingMsg();	
+				var artist = keyword.split("-")[0];
+				var linkid = keyword.split("-")[1];
+				this.activeTrack().artist = artist;
+				this.activeTrack().linkid = linkid;
+				this.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1&facet=all&hl=" + linkid);	
+			}
+			else {
+				this.finishPageLoad();		
+			}
+		}.bind(context);
 		
-		var Item = function(item){
-			this.keyword = unescape(item.keyword);
-			this.count = ko.observable(item.count || 1);
+		this.history = new (function(){
+			var KEY_NAME = "history";
+			var DEFAULT_HISTORY = ["Muse","Radiohead"];
+			var items =  ko.observableArray();
+			var history = $.jStorage.get(KEY_NAME, DEFAULT_HISTORY);
 			
-			this.remove = function(){
-				items.remove(this);
+			var load = function(items){
+				console.log(items);
+				$.each(items,function(index){
+					this.addItem(items[index]);
+				}.bind(this));
+			}.bind(this);
+			
+			var Item = function(item){
+				this.keyword = unescape(item.keyword);
+				this.count = ko.observable(item.count || 1);
+				
+				this.remove = function(){
+					items.remove(this);
+				}
+				
+			}
+			this.addItem = function(value){
+				if (typeof value == "string" && value != '')
+					value = { keyword: value, count: 1 }
+				if (typeof value == "object" && 'keyword' in value){
+					var arr = ko.utils.arrayFilter(this.getItems(), function(item){
+					   return item.keyword == value.keyword ? item: null;
+					});
+					if (arr.length == 0){
+						items.unshift(new Item(value));
+					}
+					else {
+						arr[0].count(arr[0].count()+1);
+					}
+					this.save()
+				}
+			} 
+			this.getItems = function(){
+				return items();	
 			}
 			
-		}
-		this.addItem = function(value){
-			if (typeof value == "string" && value != '')
-				value = { keyword: value, count: 1 }
-			if (typeof value == "object" && 'keyword' in value){
-				var arr = ko.utils.arrayFilter(this.getItems(), function(item){
-				   return item.keyword == value.keyword ? item: null;
-				});
-				if (arr.length == 0){
-					items.unshift(new Item(value));
-				}
-				else {
-					arr[0].count(arr[0].count()+1);
-				}
-				this.save()
+			this.save = function(){
+				$.jStorage.set(KEY_NAME, this.getItems());
 			}
-		} 
-		this.getItems = function(){
-			return items();	
-		}
-		
-		this.save = function(){
-			$.jStorage.set(KEY_NAME, this.getItems());
-		}
-		
-		this.refresh = function(){
 			
-		}
-		
-		this.toString = function(){
-            return ko.toJS(PPL.searchHistory.getItems());
-		}
-		
-		load(history);
+			this.refresh = function(){
+				
+			}
+			
+			this.toString = function(){
+	            return ko.toJS(this.getItems());
+			}
+			
+			load(history);
+		})()
 	})()
-	
 	
 	this.loadTrackView = function(){
 
-		var activeLinkid = PPL.activeTrack().linkid;
-		$.each(PPL.search.trackdata, function(i,o){
+		var activeLinkid = this.activeTrack().linkid;
+		$.each(search.trackdata, function(i,o){
 			if (o.linkid == activeLinkid)
 				this.activeTrack(new Track(o));
 		}.bind(this));	
 		
 		//this part goes to YQL for all the missingAlbumArt array and finds their images	
-		PPL.missingAlbumArt.fetch('PPL.missingAlbumArt.setActiveTrackImage');
+		this.missingAlbumArt.fetch('PPL.missingAlbumArt.setActiveTrackImage');
 			
-		PPL.finishPageLoad();
-	} 
-	
-	this.loadTracks = function(){
-		this.activePage(new TrackPage(PPL.search.searchFor(), this.currentPage));		
-	} 
-	
-	this.searchTracks = function(keyword){
-		if (typeof keyword != "undefined" && keyword != ""){
-			//the onload attribute doesnt need to be set because the callback is hardcoded into the response (searchResultsFn)
-			$.mobile.showPageLoadingMsg();	
-			if (typeof PPL.searchHistory == "object"){
-				PPL.searchHistory.addItem(keyword);
-			}
-			this.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1");	
-		}
-	}
-	
-	this.searchTrack = function(keyword){
-		if (PPL.activeTrack().linkid != keyword){
-			$.mobile.showPageLoadingMsg();	
-			var artist = keyword.split("-")[0];
-			var linkid = keyword.split("-")[1];
-			this.activeTrack().artist = artist;
-			this.activeTrack().linkid = linkid;
-			this.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1&facet=all&hl=" + linkid);	
-		}
-		else {
-			PPL.finishPageLoad();		
-		}
-	}
-	
+		this.finishPageLoad();
+	}.bind(context); 
+
 	this.remoteRequest = function(src){
 		var script = document.createElement("script"); 
 		script.setAttribute("type","text/javascript"); 
 		script.setAttribute("src",src);
 		document.body.appendChild(script);
 	}
-	
 
-	
 	this.finishPageLoad = function(){
 		//jquery mobile method
 		pageSelector = u.hash.replace( /\?.*$/, "" );
@@ -340,20 +343,13 @@ var PPL = new (function(){
 	
 	this.refreshNavbar = function(){
 		console.log("refresh navbar");
-		
 	}
 	
 	this.pageBeforeCreate = function(){
 		console.log("pagebeforecreate");
 		//this gets called AFTER pageBeforeChange and BEFORE document.ready
 		
-	}.bind(this);  
-	  
-    this.toString = function(){
-        return ko.toJSON({
-            history: ""
-        });
-    };	
+	}.bind(this);
 	
 })(); 
  
@@ -426,7 +422,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			// the DOM. The id of the page we are going to write our
 			// content into is specified in the hash before the '?'.			
 			PPL.activePageName = "search-results";
-			PPL.searchTracks(u.hash.replace( /.*keyword=/, "" ));
+			PPL.search.track(u.hash.replace( /.*keyword=/, "" ));
 			
 			// Make sure to tell changepage we've handled this call so it doesn't
 			// have to do anything.
@@ -434,7 +430,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 		}
 		else if ( u.hash.search(tv) !== -1){
 			PPL.activePageName = "track-view";
-			PPL.searchTrack(u.hash.replace( /.*linkid=/, "" ));
+			PPL.search.track(u.hash.replace( /.*linkid=/, "" ));
 			e.preventDefault();
 		}
 		else if ( u.hash.search(mp) !== -1 ){

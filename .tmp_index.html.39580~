@@ -91,7 +91,7 @@
     
         <div data-role="content">	
         	<ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" style="margin-bottom:0;"><li data-role="list-divider">Search History</li></ul>
-			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" style="margin-top:0;" data-inset="true" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }">
+			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" style="margin-top:0;" data-inset="true" data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
             </ul>
             <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
             </ul>
@@ -118,7 +118,7 @@
     
                 <div data-role="collapsible" data-collapsed="true" data-theme="a">
 					<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search History</li></ul>
-                    <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }">
+                    <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
                     </ul>
                     <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate' }">
                     </ul>
