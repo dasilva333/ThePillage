@@ -19,10 +19,12 @@
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.mobile.js"></script>
 	<script type="text/javascript" src="js/jquery.tmpl.js"></script>
-    <script type='text/javascript' src="js/jquery.urlshortener.js"></script>
-    <script type='text/javascript' src="js/jquery.jplayer.min.js"></script>    
+    <script type="text/javascript" src="js/jquery.urlshortener.js"></script>
+    <script type="text/javascript" src="js/jquery.jplayer.min.js"></script>
+    <script type="text/javascript" src="js/jquery.json.js"></script>
+    <script type="text/javascript" src="js/jquery.jStorage.js"></script>
     <script type="text/javascript" src="js/knockout.js"></script>
-	<script type="text/javascript" src="js/main.js"></script>    
+	<script type="text/javascript" src="js/main.js"></script>
     <script type="text/javascript" src="js/oauth.js"></script>
     <script type="text/javascript" src="js/sha1.js"></script>
     <script type="text/javascript" src="js/rc4.js"></script>
@@ -88,8 +90,8 @@
         </div><!-- /header -->
     
         <div data-role="content">	
-			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" 
-            	data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems(), afterAdd: PPL.searchHistory.refresh, beforeRemove: PPL.searchHistory.refresh  }">
+        	<ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" style="margin-bottom:0;"><li data-role="list-divider">Search History</li></ul>
+			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" style="margin-top:0;" data-inset="true" data-bind="template: { name: 'historyTemplate', foreach: PPL.searchHistory.getItems() }">
             </ul>
             <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
             </ul>
@@ -109,7 +111,7 @@
 		<div data-role="content">
             <div class="content-primary">
 				<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search Results</li></ul>
-                <ul data-role="listview" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }" data-filter="true" data-filter-placeholder="Search within results" data-filter-theme="d">
+                <ul data-role="listview"  data-theme="c" data-dividertheme="d" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }" data-filter="true" data-filter-placeholder="Search within results" data-filter-theme="d">
                 </ul>
             </div>
  		   <div class="content-secondary">
