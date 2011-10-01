@@ -21,84 +21,6 @@ var PPL = new (function(){
 	})
 	
 	this.trackPages = ko.observableArray();
-  /*
-     * Houses all the user preference code
-     * - needs to be initialized
-     */
-    this.preferences = function(settings){
-        var currentTime = (new Date()).getTime();
-        
-        var COOKIE_NAME = "settings";
-        var COOKIE_EXPIRE_NOW = (new Date(currentTime - 2*24*60*60*1000)).toGMTString(); // 2 days ago
-        var COOKIE_EXPIRATION = (new Date(currentTime + 999*24*60*60*1000)).toGMTString(); // 999 days from now
-        
-        /*
-         * Get cookie value (private function)
-         * - loops over all the cookies and returns the one that maches
-         * @param cookie name of the cookie
-         * @return the content of the cookie [escaped]
-         */
-        var getCookieValue = function(cookie){
-            var rawCookies = document.cookie.split(";");
-            var rawCookieData = null;
-            
-            // leave if theres nothing worth searching for
-            if(typeof(cookie) === 'undefined' || cookie === "") { return; }
-            
-            // loop over all the cookies
-            for(var i in rawCookies) {
-                rawCookieData = rawCookies[i].split("=");
-                
-                // if the cookie name matches return the value of the cookie [escaped]
-                if(rawCookieData[0].replace(/(^\s+|\s+$)/g, "") == cookie) {
-                    return unescape(rawCookieData[1]);
-                }
-            }
-            
-            // nothing found
-            return;
-        };
-        
-        /*
-         * Load all the current settings from the cookie
-         */
-        this.load = function(){
-            var cookie = getCookieValue(COOKIE_NAME);
-            var settings = {};
-            // load the cookie if its available
-            if(cookie){
-                settings = $.parseJSON(cookie);
-                try {
-					this.searchHistory = new this.searchHistory(settings.history);
-					
-                } catch(e){
-                    console.error("Error loading settings... " + e);
-                    this.preferences.erase();
-                }
-            } else {
-                // load default search history
-                this.searchHistory = new this.searchHistory(["Muse","Radiohead","Greenday"]);			
-				
-                // there was no cookie set, save it.
-                this.preferences.save();
-            }
-        }.bind(settings);
-        
-        /*
-         * Erase the cookie
-         */
-        this.erase = function(){
-            document.cookie = COOKIE_NAME + "=; expires=" + COOKIE_EXPIRE_NOW + "; path=/";
-            document.location.href = document.location.href;
-        };
-        
-        /*
-         * Save all the current settings into the cookie
-         */
-        this.save = function(){
-            document.cookie = COOKIE_NAME + "=" + escape(this.toString()) + "; expires=" + COOKIE_EXPIRATION + "; path=/";
-        }.bind(settings);
-    };	
 	
 	var secondsToDuration = function(seconds){
 		var durationStr = new Array();
@@ -275,10 +197,14 @@ var PPL = new (function(){
 		})
 	}
 	
-	this.searchHistory = function(history){
+	this.searchHistory = new (function(){
+		var KEY_NAME = "history";
+		var DEFAULT_HISTORY = ["Muse","Radiohead"];
 		var items =  ko.observableArray();
+		var history = $.jStorage.get(KEY_NAME, DEFAULT_HISTORY);
 		
 		var load = function(items){
+			console.log(items);
 			$.each(items,function(index){
 				this.addItem(items[index]);
 			}.bind(this));
@@ -290,9 +216,8 @@ var PPL = new (function(){
 			
 			this.remove = function(){
 				items.remove(this);
-				//TODO fix?
-				PPL.searchHistory.refresh();
 			}
+			
 		}
 		this.addItem = function(value){
 			if (typeof value == "string" && value != '')
@@ -302,36 +227,39 @@ var PPL = new (function(){
 				   return item.keyword == value.keyword ? item: null;
 				});
 				if (arr.length == 0){
-					
 					items.unshift(new Item(value));
 				}
 				else {
 					arr[0].count(arr[0].count()+1);
 				}
+				this.save()
 			}
 		} 
 		this.getItems = function(){
 			return items();	
 		}
 		
-		this.refresh = function(){
-			//TODO improve or reduce this stuff when adding an item
-			/*$page = $( "#main-page, #search-results" ),
-			$content = $page.children( ":jqmData(role=content)" ),
-			$page.page();
-			$content.find( ":jqmData(role=listview)" ).listview();
-			$content.find( ":jqmData(role=listview)" ).listview("refresh");	*/
-			
-			//$("ul").listview('refresh');
-			if (typeof PPL.preferences == "object")
-				PPL.preferences.save();
+		this.save = function(){
+			$.jStorage.set(KEY_NAME, this.getItems());
 		}
+		
+		this.refresh = function(){
+			
+		}
+		
 		this.toString = function(){
-		   return ko.toJS(this.getItems());	
+            var keys = [];
+            var items = this.getItems();
+
+            $.each(items,function(i,o){
+				keys.push(o.keyword);
+			});
+            
+            return keys.join(",");
 		}
 		
 		load(history);
-	}
+	})()
 	
 	
 	this.loadTrackView = function(){
@@ -388,11 +316,6 @@ var PPL = new (function(){
 		//$.mobile.page.prototype.options.domCache = true;
 	    
 		if (this.isInit	== false){
-			// initialize complex object 
-			if (typeof this.preferences == "function")
-				this.preferences = new this.preferences(this);
-			
-			this.preferences.load();
 						
 			PPL.audioPlayer = $("#jquery_jplayer_1").jPlayer({
 				swfPath: "swf",
@@ -477,7 +400,7 @@ var PPL = new (function(){
 	    
     this.toString = function(){
         return ko.toJSON({
-            history: PPL.searchHistory.toString()
+            history: ""
         });
     };	
 	
