@@ -91,21 +91,13 @@ var PPL = new (function(){
 	
 	var Track = function(item){
 		var track = this;
-		var secondsToDuration = function(seconds){
-			var durationStr = new Array();
-			durationStr.push(parseInt(seconds / 60));
-			durationStr.push(":");
-			var secs = seconds % 60;
-			durationStr.push((secs  < 10) ? '0'+secs : secs);
-			return durationStr.join("");
-		}
 		this.noAlbumImg = "http://static.pplaylist.com/img/elements/album-art.gif"
 		this.artist = item.artist;
 		this.title = unescape(item.title);
 		this.albumImage = ko.observable(item.album);
 		this.trackid = item.trackid;
 		this.linkid =  this.artist + "-" + item.linkid;
-		this.duration = secondsToDuration(item.duration);
+		this.duration = $.jPlayer.convertTime( item.duration);
 		//encryption key for the lulz
 		this.song_url = decrypt(item.song_url,"Error, this track is not valid!"); 
 		this.short_url = ko.observable("");
@@ -131,6 +123,7 @@ var PPL = new (function(){
 		}
 		
 		this.open = function(){
+			console.log(track.song_url);
 			this.audioPlayer.jPlayer("setMedia", { mp3 : track.song_url }).jPlayer("play");
 			return false;
 		}.bind(context);
@@ -351,8 +344,9 @@ var PPL = new (function(){
 })(); 
  
 $(document).ready(function(){
-		console.log("document.ready");
-		PPL.audioPlayer = $('#jquery_jplayer_1').jPlayer({
+	console.log("document.ready");
+	PPL.audioPlayer = $('#jquery_jplayer_1').jPlayer(
+		{
 			swfPath: 'swf',
 			solution: 'html, flash',
 			supplied: 'mp3',
@@ -360,7 +354,7 @@ $(document).ready(function(){
 			volume: 0.8,
 			muted: false,
 			backgroundColor: '#000000',
-			cssSelectorAncestor: '#jp_container_1',
+			cssSelectorAncestor: '.jp-audio',
 			cssSelector: {
 			videoPlay: '.jp-video-play',
 			play: '.jp-play',
