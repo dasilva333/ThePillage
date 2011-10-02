@@ -63,12 +63,16 @@
 		</li>	
     </script>
     
-	<script id="playlistTemplate" type="text/html">
-		<li data-role="list-divider">Saved Playlists</li>
-		<li><a href="#saved-playlists?name=Awesome Mix">Awesome Mix</a></li>
-		<li><a href="#saved-playlists?name=Party Mix">Party Mix</a></li>
-		<li><a href="#saved-playlists?name=Slow Songs">Slow Songs</a></li>	
+	<!--		{{if PPL.playlists.getAll().indexOf($data) == 0}}
+			<li data-role="list-divider">Saved Playlists</li>
+		{{/if}}	-->
+	<script id="playlistTemplate" type="text/html">	
+		<li><a href="#saved-playlists?name=${ $data.name }">${ $data.name }</a></li>
     </script>
+	
+	<script id="addPlaylistTemplate" type="text/html">	
+		<li data-bind="click: addActiveTrack"><a href="#playlist-view?name=${ $data.name }">${ $data.name }</a></li>
+    </script>	
     
 	<script id="navbarTemplate" type="text/html">
 		<div data-role="navbar">	
@@ -135,7 +139,7 @@
         	<ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true" style="margin-bottom:0;"><li data-role="list-divider">Search History</li></ul>
 			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" style="margin-top:0;" data-inset="true" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }">
             </ul>
-            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
+            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
             </ul>
 		</div><!-- /content -->
 		
@@ -163,7 +167,7 @@
 					<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search History</li></ul>
                     <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }">
                     </ul>
-                    <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate' }">
+                    <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
                     </ul>
                 </div>
             </div>	
@@ -183,8 +187,41 @@
         </div><!-- /header -->
     
         <div data-role="content">	
-            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate' }">
+            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
             </ul>
+		</div><!-- /content -->
+		
+        <div data-role="footer" data-position="fixed" data-id="navbar">
+    		<div style="background-color:#EEE;" data-bind="template: { name: 'playerTemplate' }"></div>
+			<div data-bind="template: { name: 'navbarTemplate' }"></div>
+        </div><!-- /footer -->      
+    </div><!-- /page -->
+	
+	<div id="add-playlists-view" data-role="page" class="type-index" data-dom-cache="true">
+    
+        <div data-role="header" data-position="fixed">
+        	<h1>Add Song To Playlist</h1>
+        </div><!-- /header -->
+    
+        <div data-role="content">	
+            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'addPlaylistTemplate', foreach: PPL.playlists.getAll() }">
+            </ul>
+		</div><!-- /content -->
+		
+        <div data-role="footer" data-position="fixed" data-id="navbar">
+    		<div style="background-color:#EEE;" data-bind="template: { name: 'playerTemplate' }"></div>
+			<div data-bind="template: { name: 'navbarTemplate' }"></div>
+        </div><!-- /footer -->      
+    </div><!-- /page -->
+
+    <div id="playlist-view" data-role="page" class="type-index" data-dom-cache="true">
+    
+        <div data-role="header" data-position="fixed">
+        	<h1 data-bind="text: PPL.activePlaylist().name"></h1>
+        </div><!-- /header -->
+    
+        <div data-role="content">	
+            <ul data-role="listview"  data-theme="c" data-dividertheme="d" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePlaylist().tracks() }" data-filter="true" data-filter-placeholder="Search within playlist" data-filter-theme="d"></ul>
 		</div><!-- /content -->
 		
         <div data-role="footer" data-position="fixed" data-id="navbar">
@@ -211,7 +248,7 @@
                 </ul>
             </div>
 			<a data-bind="attr: { href: PPL.activeTrack().song_url }" data-role="button" data-theme="b">Download</a>
-            <a href="index.html" data-role="button" data-rel="back" data-theme="b">Add to Playlist</a>
+            <a href="index.html#add-playlists-view" data-role="button" data-theme="b">Add to Playlist</a>
 			<a data-role="button" onclick="PPL.activeTrack().promptMoreOfArtist()">Find More By This Artist</a>
             <a data-role="button" onclick="PPL.activeTrack().fetchShortUrl()">Share Music Link</a>
             <span data-bind="visible: PPL.activeTrack().short_url() != ''">

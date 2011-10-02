@@ -13,7 +13,74 @@ var PPL = new (function(){
 		albumImage: ko.observable(""),
 		short_url: ko.observable("")
 	})
+	
+	this.activePlaylist = ko.observable({
+		tracks: ko.observableArray(),
+		name: ""
+	})
+
+	this.playlists = new (function(){
+		var playlists = this;
+		var KEY_NAME = "playlists";
+		var DEFAULT_PLAYLIST = [{
+			name: "Default Playlist",
+			tracks: []
+		}];
+		var saved_lists = $.jStorage.get(KEY_NAME, DEFAULT_PLAYLIST);
+		var lists = ko.observableArray();
+		var load = function(){
+			$.each(saved_lists,function(i,o){
+				this.add(o.name, o.tracks);
+			}.bind(playlists));
+		}
+		
+		var Playlist = function(newName, newTracks){
+			var playlist = this;
+			var load = function(newName, newTracks){
+				console.log("playlist loading")
+				$.each(newTracks, function(i,o){
+					playlist.addTrack(o);
+				});
+			}
 			
+			this.name = newName;
+			this.tracks = ko.observableArray();
+			
+			this.addTrack = function(track){
+				playlist.tracks.push(track);
+				this.save();
+			}.bind(playlists);
+			
+			this.addActiveTrack = function(){
+				playlist.addTrack(this.activeTrack());
+				this.activePlaylist(playlist);
+			}.bind(context);
+			
+			load(newName, newTracks);
+		}
+		
+		this.add = function(name, tracks){
+			lists.push(new Playlist(name, tracks));
+			this.save();
+		}
+		
+		this.save = function(){
+			console.log("saving playlists")
+			console.log(this.toString())
+			$.jStorage.set(KEY_NAME, this.toString());
+		}
+		
+		this.getAll = function(){
+			return lists();
+		}
+		
+		this.toString = function(){
+            return ko.toJS(this.getAll());
+		}
+		
+		load();
+	})()
+	
 	var TrackPage = function(keyword, number){
 		var trackpage = this;
 		this.pageNumber = number;
@@ -42,6 +109,7 @@ var PPL = new (function(){
 		
 		load(keyword, number);
 	}
+	
 	this.missingAlbumArt = new (function(){
 		var missingAlbumArt	= [];
 		var missingAlbums = this;
@@ -163,7 +231,7 @@ var PPL = new (function(){
 			if (this.activePageName == "search-results")
 				search.loadTracks(); 
 			else if (this.activePageName == "track-view")
-				search.loadTrackView();
+				this.loadTrackView();
 			$.mobile.hidePageLoadingMsg();	
 		}.bind(context)
 		
@@ -264,7 +332,7 @@ var PPL = new (function(){
 			}
 			
 			this.save = function(){
-				$.jStorage.set(KEY_NAME, this.getItems());
+				$.jStorage.set(KEY_NAME, this.toString());
 			}
 			
 			this.refresh = function(){
@@ -282,7 +350,7 @@ var PPL = new (function(){
 	this.loadTrackView = function(){
 
 		var activeLinkid = this.activeTrack().linkid;
-		$.each(search.trackdata, function(i,o){
+		$.each(this.search.trackdata, function(i,o){
 			if (o.linkid == activeLinkid)
 				this.activeTrack(new Track(o));
 		}.bind(this));	
@@ -403,6 +471,8 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 		var sr = /^#search-results/; 
 		var tv = /^#track-view/; 
 		var mp = /^#main-page/; 
+		var sp = /^#saved-playlists/; 
+		var sp2 = /^#playlist-view/; 
 		
 		if ( u.hash.search(sr) !== -1 ) {
 			// We're being asked to display the items for a specific category.
@@ -424,7 +494,8 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			PPL.search.track(u.hash.replace( /.*linkid=/, "" ));
 			e.preventDefault();
 		}
-		else if ( u.hash.search(mp) !== -1 ){
+		//todo write a regex so it looks cleaner
+		else if ( u.hash.search(mp) !== -1 || u.hash.search(sp) !== -1  || u.hash.search(sp2) !== -1 ){
 			PPL.finishPageLoad();
 			e.preventDefault();
 		}
