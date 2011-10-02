@@ -84,7 +84,7 @@
 
 <body>
     
-    <div id="main-page" data-role="page" class="type-index">
+    <div id="main-page" data-role="page" class="type-index" data-dom-cache="true">
     
         <div data-role="header" data-position="fixed" data-bind="template: { name: 'searchTemplate' }">
         </div><!-- /header -->
@@ -100,7 +100,7 @@
     </div><!-- /page -->
          
 
-    <div id="search-results" data-role="page">
+    <div id="search-results" data-role="page" data-dom-cache="true">
     	
         <div id="jquery_jplayer_1" class="jp-jplayer"></div>
 
@@ -127,7 +127,7 @@
         </div>
         
         <div data-role="footer" data-position="fixed" data-id="navbar">
-        		<div style="text-align:center">
+        		<div style="background-color:#EEE;">
                     <div id="jp_container_1" data-role="none" class="jp-audio">
                         <div class="jp-type-single">
                             <div class="jp-gui jp-interface">

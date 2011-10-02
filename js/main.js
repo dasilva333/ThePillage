@@ -248,14 +248,7 @@ var PPL = new (function(){
 		}
 		
 		this.toString = function(){
-            var keys = [];
-            var items = this.getItems();
-
-            $.each(items,function(i,o){
-				keys.push(o.keyword);
-			});
-            
-            return keys.join(",");
+            return ko.toJS(PPL.searchHistory.getItems());
 		}
 		
 		load(history);
@@ -312,55 +305,7 @@ var PPL = new (function(){
 		document.body.appendChild(script);
 	}
 	
-	this.pageLoad = function(){
-		//$.mobile.page.prototype.options.domCache = true;
-	    
-		if (this.isInit	== false){
-						
-			PPL.audioPlayer = $("#jquery_jplayer_1").jPlayer({
-				swfPath: "swf",
-				supplied: "mp3",
-				wmode: "window"
-			});
-			
-			$('#jquery_jplayer_1').jPlayer({
-					swfPath: 'swf',
-					solution: 'html, flash',
-					supplied: 'mp3',
-					preload: 'metadata',
-					volume: 0.8,
-					muted: false,
-					backgroundColor: '#000000',
-					cssSelectorAncestor: '#jp_container_1',
-					cssSelector: {
-					videoPlay: '.jp-video-play',
-					play: '.jp-play',
-					pause: '.jp-pause',
-					stop: '.jp-stop',
-					seekBar: '.jp-seek-bar',
-					playBar: '.jp-play-bar',
-					mute: '.jp-mute',
-					unmute: '.jp-unmute',
-					volumeBar: '.jp-volume-bar',
-					volumeBarValue: '.jp-volume-bar-value',
-					volumeMax: '.jp-volume-max',
-					currentTime: '.jp-current-time',
-					duration: '.jp-duration',
-					fullScreen: '.jp-full-screen',
-					restoreScreen: '.jp-restore-screen',
-					repeat: '.jp-repeat',
-					repeatOff: '.jp-repeat-off',
-					gui: '.jp-gui',
-					noSolution: '.jp-no-solution'
-				},
-				errorAlerts: false,
-				warningAlerts: false
-			});
-		}
-		ko.applyBindings(this);	
-		
-		this.isInit	= true;
-	}.bind(this);
+
 	
 	this.finishPageLoad = function(){
 		//jquery mobile method
@@ -397,7 +342,13 @@ var PPL = new (function(){
 		console.log("refresh navbar");
 		
 	}
-	    
+	
+	this.pageBeforeCreate = function(){
+		console.log("pagebeforecreate");
+		//this gets called AFTER pageBeforeChange and BEFORE document.ready
+		
+	}.bind(this);  
+	  
     this.toString = function(){
         return ko.toJSON({
             history: ""
@@ -406,11 +357,54 @@ var PPL = new (function(){
 	
 })(); 
  
-$("#main-page, #search-results, #track-view").live('pagebeforecreate',PPL.pageLoad);
+$(document).ready(function(){
+		console.log("document.ready");
+		PPL.audioPlayer = $('#jquery_jplayer_1').jPlayer({
+			swfPath: 'swf',
+			solution: 'html, flash',
+			supplied: 'mp3',
+			preload: 'metadata',
+			volume: 0.8,
+			muted: false,
+			backgroundColor: '#000000',
+			cssSelectorAncestor: '#jp_container_1',
+			cssSelector: {
+			videoPlay: '.jp-video-play',
+			play: '.jp-play',
+			pause: '.jp-pause',
+			stop: '.jp-stop',
+			seekBar: '.jp-seek-bar',
+			playBar: '.jp-play-bar',
+			mute: '.jp-mute',
+			unmute: '.jp-unmute',
+			volumeBar: '.jp-volume-bar',
+			volumeBarValue: '.jp-volume-bar-value',
+			volumeMax: '.jp-volume-max',
+			currentTime: '.jp-current-time',
+			duration: '.jp-duration',
+			fullScreen: '.jp-full-screen',
+			restoreScreen: '.jp-restore-screen',
+			repeat: '.jp-repeat',
+			repeatOff: '.jp-repeat-off',
+			gui: '.jp-gui',
+			noSolution: '.jp-no-solution'
+		},
+		errorAlerts: false,
+		warningAlerts: false
+	}); 
+});
+ 
+$("#main-page, #search-results, #track-view").live('pagebeforecreate',PPL.pageBeforeCreate);
 
  
 // Listen for any attempts to call changepage.
 $(document).bind( "pagebeforechange", function( e, data ) {
+	console.log("pagebeforechange");
+	console.log(data);
+	
+	if ( typeof data.options.fromPage == "undefined" && data.options.transition == "none")
+		ko.applyBindings(PPL);	
+		
 	// We only want to handle changepage calls where the caller is
 	// asking us to load a page by URL.
 	if ( typeof data.toPage === "string" ) {
