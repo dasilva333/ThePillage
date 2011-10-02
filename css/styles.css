@@ -19,9 +19,9 @@
 @media screen and (min-width: 600px) {
 	.searchlabelText { display:inline-block !important }
 }
-/* this affects the search-results page */
-#search-results .content-primary, #search-results .content-secondary { margin:0; }
-#search-results .content-secondary, #search-results .content-secondary .ui-collapsible-contain { padding:0; }
+/* this affects the pages with secondary content */
+.secondaryContent .content-primary, .secondaryContent .content-secondary { margin:0; }
+.secondaryContent .content-secondary, .secondaryContent .content-secondary .ui-collapsible-contain { padding:0; }
 
 /* this is for the track-view */
 .trackPlaceholder { margin-bottom:20px }

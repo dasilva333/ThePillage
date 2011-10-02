@@ -7,7 +7,7 @@ var RemoteLogger = {
 var PPL = new (function(){
 	var context = this;
 	this.showShortUrl = ko.observable(false); 
-	this.activePageName = "search-results";
+	this.activePageName = ko.observable("main-page");
 	
 	this.activeTrack = ko.observable({
 		albumImage: ko.observable(""),
@@ -269,9 +269,9 @@ var PPL = new (function(){
 		//This function gets called automatically due to the Playlist.com API
 		this.searchResultsFn = function(){
 			console.log("searchResultsFn");
-			if (this.activePageName == "search-results")
+			if (this.activePageName() == "search-results")
 				search.loadTracks(); 
-			else if (this.activePageName == "track-view")
+			else if (this.activePageName() == "track-view")
 				this.loadTrackView();
 			$.mobile.hidePageLoadingMsg();	
 		}.bind(context)
@@ -429,6 +429,9 @@ var PPL = new (function(){
 		//Enhance the footer/navbars
 		$(":jqmData(role='navbar')").navbar();	
 		
+		//ehnace the input if needed
+		//$('input').textinput();
+		
 		// We don't want the data-url of the page we just modified
 		// to be the url that shows up in the browser's location field,
 		// so set the dataUrl option to the URL for the category
@@ -512,7 +515,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 		var sr = /^#search-results/; 
 		var tv = /^#track-view/; 
 		var mp = /^#main-page/; 
-		var sp = /^#saved-playlists/; 
+		var pv = /^#playlists-view/; 
 		var sp2 = /^#playlist-view/; 
 		
 		if ( u.hash.search(sr) !== -1 ) {
@@ -523,7 +526,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			// The pages we use to display our content are already in
 			// the DOM. The id of the page we are going to write our
 			// content into is specified in the hash before the '?'.			
-			PPL.activePageName = "search-results";
+			PPL.activePageName("search-results");
 			PPL.search.track(u.hash.replace( /.*keyword=/, "" ));
 			
 			// Make sure to tell changepage we've handled this call so it doesn't
@@ -531,16 +534,18 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			e.preventDefault();
 		}
 		else if ( u.hash.search(tv) !== -1){
-			PPL.activePageName = "track-view";
+			PPL.activePageName("track-view");
 			PPL.search.track(u.hash.replace( /.*linkid=/, "" ));
 			e.preventDefault();
 		}
 		//todo write a regex so it looks cleaner
-		else if ( u.hash.search(mp) !== -1 || u.hash.search(sp) !== -1 ){
+		else if ( u.hash.search(mp) !== -1 || u.hash.search(pv) !== -1 ){
+			PPL.activePageName("playlists-view");
 			PPL.finishPageLoad();
 			e.preventDefault();
 		}
 		else if (u.hash.search(sp2) !== -1){
+			PPL.activePageName("playlists-view");
 			PPL.activePlaylist(PPL.playlists.getByName(u.hash.replace( /.*name=/, "" )));
 			PPL.finishPageLoad();
 			e.preventDefault();
