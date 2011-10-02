@@ -18,6 +18,62 @@ var PPL = new (function(){
 		tracks: ko.observableArray(),
 		name: ""
 	})
+	
+	
+	//TODO cant tell if hacky or proper
+	this.createTrack = function(track){
+		return new Track(track);
+	}
+	
+	var Track = function(item){
+		var track = this;
+		this.noAlbumImg = "http://static.pplaylist.com/img/elements/album-art.gif"
+		this.artist = item.artist;
+		this.title = unescape(item.title);
+		this.albumImage = ko.observable(item.album);
+		this.trackid = item.trackid;
+		this.linkid =  this.artist + "-" + item.linkid;
+		this.duration = $.jPlayer.convertTime( item.duration);
+		//encryption key for the lulz
+		this.song_url = rc4.decrypt(item.song_url,"Error, this track is not valid!"); 
+		this.short_url = ko.observable("");
+		
+		this.fetchShortUrl = function(){
+			$.shortenUrl(this.song_url, function(short_url) {
+				this.short_url(this.artist + " - " + this.title + ": " + short_url);
+			}.bind(this));
+		}
+		this.clean = function(str){
+			//increase chances of returning a match by removing extra unessecary parts to a song name
+			return str.replace("&amp;","and").replace("&","and").toLowerCase().split("(")[0].split("feat")[0].split("ft.")[0].split("-")[0].split("f. ")[0].split(" ft ")[0];
+		}	
+			
+		//the album art might missing so add a placeholder and try to fetch a new one
+		if (item.album == this.noAlbumImg || item.album == ""){
+			this.albumImage("images/noAlbumImage.png");				
+			context.missingAlbumArt.addItem([this.trackid , this.clean(this.artist) + ' ' + this.clean(this.title)]);			
+		}
+		
+		this.setTrackImage = function(image){
+			this.albumImage(image);
+		}
+		
+		this.open = function(){
+			console.log(track.song_url);
+			this.audioPlayer.jPlayer("setMedia", { mp3 : track.song_url }).jPlayer("play");
+			return false;
+		}.bind(context);
+		
+		this.setActiveTrack = function(){
+			this.activeTrack(track);
+		}.bind(context);
+		
+		this.promptMoreOfArtist = function(){
+			//TODO replace confirm, does not work on the touchpad
+			if (confirm("Would you like to search more songs by " + this.artist + "?"))	
+				location.href = "#search-results?keyword=" + this.artist;
+		}
+	};	
 
 	this.playlists = new (function(){
 		var playlists = this;
@@ -37,7 +93,6 @@ var PPL = new (function(){
 		var Playlist = function(newName, newTracks){
 			var playlist = this;
 			var load = function(newName, newTracks){
-				console.log("playlist loading")
 				$.each(newTracks, function(i,o){
 					playlist.addTrack(o);
 				});
@@ -47,7 +102,7 @@ var PPL = new (function(){
 			this.tracks = ko.observableArray();
 			
 			this.addTrack = function(track){
-				playlist.tracks.push(track);
+				playlist.tracks.push(context.createTrack(track));
 				this.save();
 			}.bind(playlists);
 			
@@ -72,6 +127,12 @@ var PPL = new (function(){
 		
 		this.getAll = function(){
 			return lists();
+		}
+		
+		this.getByName = function(name){
+			return ko.utils.arrayFilter(this.getAll(), function(list){
+				return list.name == name ? list: null;
+			})[0];
 		}
 		
 		this.toString = function(){
@@ -156,57 +217,6 @@ var PPL = new (function(){
 		}.bind(context);
 		
 	})()
-	
-	var Track = function(item){
-		var track = this;
-		this.noAlbumImg = "http://static.pplaylist.com/img/elements/album-art.gif"
-		this.artist = item.artist;
-		this.title = unescape(item.title);
-		this.albumImage = ko.observable(item.album);
-		this.trackid = item.trackid;
-		this.linkid =  this.artist + "-" + item.linkid;
-		this.duration = $.jPlayer.convertTime( item.duration);
-		//encryption key for the lulz
-		this.song_url = decrypt(item.song_url,"Error, this track is not valid!"); 
-		this.short_url = ko.observable("");
-		
-		this.fetchShortUrl = function(){
-			$.shortenUrl(this.song_url, function(short_url) {
-				this.short_url(this.artist + " - " + this.title + ": " + short_url);
-			}.bind(this));
-		}
-		this.clean = function(str){
-			//increase chances of returning a match by removing extra unessecary parts to a song name
-			return str.replace("&amp;","and").replace("&","and").toLowerCase().split("(")[0].split("feat")[0].split("ft.")[0].split("-")[0].split("f. ")[0].split(" ft ")[0];
-		}	
-			
-		//the album art might missing so add a placeholder and try to fetch a new one
-		if (item.album == this.noAlbumImg || item.album == ""){
-			this.albumImage("images/noAlbumImage.png");				
-			context.missingAlbumArt.addItem([this.trackid , this.clean(this.artist) + ' ' + this.clean(this.title)]);			
-		}
-		
-		this.setTrackImage = function(image){
-			this.albumImage(image);
-		}
-		
-		this.open = function(){
-			console.log(track.song_url);
-			this.audioPlayer.jPlayer("setMedia", { mp3 : track.song_url }).jPlayer("play");
-			return false;
-		}.bind(context);
-		
-		this.setActiveTrack = function(){
-			//TODO fix the PPL usage here... somehow
-			this.activeTrack(track);
-		}.bind(context);
-		
-		this.promptMoreOfArtist = function(){
-			//TODO replace confirm, does not work on the touchpad
-			if (confirm("Would you like to search more songs by " + this.artist + "?"))	
-				location.href = "#search-results?keyword=" + this.artist;
-		}
-	};
 	
 	//these are placeholder objects that must be here for playlist.com's api
 	this.user = {};
@@ -495,7 +505,12 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			e.preventDefault();
 		}
 		//todo write a regex so it looks cleaner
-		else if ( u.hash.search(mp) !== -1 || u.hash.search(sp) !== -1  || u.hash.search(sp2) !== -1 ){
+		else if ( u.hash.search(mp) !== -1 || u.hash.search(sp) !== -1 ){
+			PPL.finishPageLoad();
+			e.preventDefault();
+		}
+		else if (u.hash.search(sp2) !== -1){
+			//PPL.activePlaylist(PPL.playlists.getByName(u.hash.replace( /.*name=/, "" )));
 			PPL.finishPageLoad();
 			e.preventDefault();
 		}
