@@ -75,7 +75,7 @@
 		<div data-role="navbar">	
 			<ul>
 				<li><a href="index.html#main-page">Home</a></li>
-				<li><a href="index.html#search-results?keyword=${ PPL.activePage().keyword }" class="ui-btn-active ui-state-persist">Search</a></li>
+				<li><a href="index.html#search-results?keyword=${ PPL.search.activePage().keyword }" class="ui-btn-active ui-state-persist">Search</a></li>
 				<li><a href="index.html#playlist-page">Playlists</a></li>
 			</ul>
 		</div>
@@ -111,7 +111,7 @@
 		<div data-role="content">
             <div class="content-primary">
 				<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search Results</li></ul>
-                <ul data-role="listview"  data-theme="c" data-dividertheme="d" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePage().tracks() }" data-filter="true" data-filter-placeholder="Search within results" data-filter-theme="d">
+                <ul data-role="listview"  data-theme="c" data-dividertheme="d" data-bind="template: { name: 'trackTemplate', foreach: PPL.search.activePage().tracks() }" data-filter="true" data-filter-placeholder="Search within results" data-filter-theme="d">
                 </ul>
             </div>
  		   <div class="content-secondary">

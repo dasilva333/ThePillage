@@ -6,32 +6,14 @@ var RemoteLogger = {
 
 var PPL = new (function(){
 	var context = this;
-	this.isInit	= false;
-	this.currentPage = 1;
 	this.showShortUrl = ko.observable(false); 
 	this.activePageName = "search-results";
-	
-	this.activePage = ko.observable({
-		//todo remove this dependency for the foreach template
-		tracks: ko.observableArray()
-	});
 	
 	this.activeTrack = ko.observable({
 		albumImage: ko.observable(""),
 		short_url: ko.observable("")
 	})
-	
-	this.trackPages = ko.observableArray();
-	
-	var secondsToDuration = function(seconds){
-		var durationStr = new Array();
-		durationStr.push(parseInt(seconds / 60));
-		durationStr.push(":");
-		var secs = seconds % 60;
-		durationStr.push((secs  < 10) ? '0'+secs : secs);
-		return durationStr.join("");
-	}
-		
+			
 	var TrackPage = function(keyword, number){
 		var trackpage = this;
 		this.pageNumber = number;
@@ -40,16 +22,17 @@ var PPL = new (function(){
 
 		var load = function(keyword, number){
 			//add the results to the page
-			for(var index in PPL.search.trackdata)
-				trackpage.tracks.push(new Track(PPL.search.trackdata[index]));
+			for(var index in this.search.trackdata)
+				trackpage.tracks.push(new Track(this.search.trackdata[index]));
 
 			//this part goes to YQL for all the missingAlbumArt array and finds their images	
-			PPL.missingAlbumArt.fetch('PPL.missingAlbumArt.setTrackImages');
+			this.missingAlbumArt.fetch('PPL.missingAlbumArt.setTrackImages');
 			
 			setTimeout(function(){
-				PPL.finishPageLoad();
-			},250);
-		}
+				this.finishPageLoad();
+			}.bind(this),250);
+			
+		}.bind(context);
 				
 		this.findTrackById = function(trackid){
 			return ko.utils.arrayFilter(this.tracks(), function(track){
@@ -59,7 +42,6 @@ var PPL = new (function(){
 		
 		load(keyword, number);
 	}
-	
 	this.missingAlbumArt = new (function(){
 		var missingAlbumArt	= [];
 		var missingAlbums = this;
@@ -92,8 +74,7 @@ var PPL = new (function(){
 		
 		this.setTrackImages = function(data){
 			var curData = data.query.results.entries.result;
-			//TODO figure out how to remove the PPL. to this.
-			var curPage = this.activePage();
+			var curPage = this.search.activePage();
 			$.each(curData,function(i,o){
 				if (o.album.length > 3){
 				   curPage.findTrackById(o.trackid).setTrackImage(o.album);
@@ -103,13 +84,21 @@ var PPL = new (function(){
 		}.bind(context);
 		
 		this.setActiveTrackImage = function(data){
-			PPL.activeTrack().albumImage(data.query.results.entries.result.album);
-		}
+			this.activeTrack().albumImage(data.query.results.entries.result.album);
+		}.bind(context);
 		
 	})()
 	
-	
 	var Track = function(item){
+		var track = this;
+		var secondsToDuration = function(seconds){
+			var durationStr = new Array();
+			durationStr.push(parseInt(seconds / 60));
+			durationStr.push(":");
+			var secs = seconds % 60;
+			durationStr.push((secs  < 10) ? '0'+secs : secs);
+			return durationStr.join("");
+		}
 		this.noAlbumImg = "http://static.pplaylist.com/img/elements/album-art.gif"
 		this.artist = item.artist;
 		this.title = unescape(item.title);
@@ -134,7 +123,7 @@ var PPL = new (function(){
 		//the album art might missing so add a placeholder and try to fetch a new one
 		if (item.album == this.noAlbumImg || item.album == ""){
 			this.albumImage("images/noAlbumImage.png");				
-			PPL.missingAlbumArt.addItem([this.trackid , this.clean(this.artist) + ' ' + this.clean(this.title)]);
+			context.missingAlbumArt.addItem([this.trackid , this.clean(this.artist) + ' ' + this.clean(this.title)]);			
 		}
 		
 		this.setTrackImage = function(image){
@@ -142,13 +131,15 @@ var PPL = new (function(){
 		}
 		
 		this.open = function(){
-			PPL.audioPlayer.jPlayer("setMedia", { mp3 : this.song_url }).jPlayer("play");
+			this.audioPlayer.jPlayer("setMedia", { mp3 : track.song_url }).jPlayer("play");
 			return false;
-		}
+		}.bind(context);
+		
 		this.setActiveTrack = function(){
 			//TODO fix the PPL usage here... somehow
-			PPL.activeTrack(this);
-		}
+			this.activeTrack(track);
+		}.bind(context);
+		
 		this.promptMoreOfArtist = function(){
 			//TODO replace confirm, does not work on the touchpad
 			if (confirm("Would you like to search more songs by " + this.artist + "?"))	
@@ -161,11 +152,17 @@ var PPL = new (function(){
 	this.player = {
 		playWhenReady: function(){}
 	};
+	
 	this.search = new (function(){
 		var search = this;
 		this.searchVersion = "",
 		this.searchTerm = "";
 		this.trackdata = null;
+		this.currentPage = 1;
+		this.activePage = ko.observable({
+			//TODO remove this dependency for the foreach template
+			tracks: ko.observableArray()
+		});
 			
 		//This function gets called automatically due to the Playlist.com API
 		this.searchResultsFn = function(){
@@ -178,7 +175,7 @@ var PPL = new (function(){
 		}.bind(context)
 		
 		this.submit = function(form){
-			PPL.search.searchFor(form.searchBox.value);
+			this.searchFor(form.searchBox.value);
 			return false;			
 		};
 		
@@ -188,7 +185,7 @@ var PPL = new (function(){
 			setTimeout(function(){
 				if (elem.value == theValue && isRun == false){
 					isRun = true;
-					PPL.search.searchFor(theValue);
+					this.searchFor(theValue);
 				}	
 			}.bind(this),3000);	
 		};
@@ -203,8 +200,8 @@ var PPL = new (function(){
 		})
 		
 		this.loadTracks = function(){
-			this.activePage(new TrackPage(search.searchFor(), this.currentPage));		
-		}.bind(context);
+			this.activePage(new TrackPage(this.searchFor(), this.currentPage));		
+		};
 	
 		this.tracks = function(keyword){
 			if (typeof keyword != "undefined" && keyword != ""){
