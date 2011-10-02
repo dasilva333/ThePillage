@@ -46,7 +46,7 @@
 				<img data-bind="attr: { src: $data.albumImage }" />
 				<h3>${$data.artist}</h3>
 				<p>${$data.title}</p>
-				<span class="ui-li-count">${$data.duration}</span>
+				<span class="ui-li-count">${$data.durationFormatted}</span>
 			</a>	
 			<a data-bind="click: setActiveTrack" href="#track-view?linkid=${$data.linkid}" data-rel="dialog" data-transition="pop">More Options</a>			
 		</li>
@@ -243,7 +243,7 @@
                         <img data-bind="attr: { src: PPL.activeTrack().albumImage() }" />
                         <h3 data-bind="text: PPL.activeTrack().artist"></h3>
                         <p data-bind="text: PPL.activeTrack().title"></p>
-                        <span class="ui-li-count" data-bind="text: PPL.activeTrack().duration"></span>
+                        <span class="ui-li-count" data-bind="text: PPL.activeTrack().durationFormatted"></span>
                     </li>
                 </ul>
             </div>
@@ -251,10 +251,10 @@
             <a href="index.html#add-playlists-view" data-role="button" data-theme="b">Add to Playlist</a>
 			<a data-role="button" onclick="PPL.activeTrack().promptMoreOfArtist()">Find More By This Artist</a>
             <a data-role="button" onclick="PPL.activeTrack().fetchShortUrl()">Share Music Link</a>
-            <span data-bind="visible: PPL.activeTrack().short_url() != ''">
+            <span data-bind="visible: PPL.activeTrack().shortLink() != ''">
                 <div data-role="fieldcontain">
                     <label for="share">Copy To Share:</label>
-                    <input type="text" id="share" data-bind="value: PPL.activeTrack().short_url()"  />
+                    <input type="text" id="share" data-bind="value: PPL.activeTrack().shortLink()"  />
                 </div>
             </span>
 			<a href="index.html" data-role="button" data-rel="back">Go Back</a>

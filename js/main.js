@@ -11,7 +11,8 @@ var PPL = new (function(){
 	
 	this.activeTrack = ko.observable({
 		albumImage: ko.observable(""),
-		short_url: ko.observable("")
+		songLink: ko.observable(""),
+		shortLink: ko.observable("")
 	})
 	
 	this.activePlaylist = ko.observable({
@@ -32,15 +33,15 @@ var PPL = new (function(){
 		this.title = unescape(item.title);
 		this.albumImage = ko.observable(item.album);
 		this.trackid = item.trackid;
-		this.linkid =  this.artist + "-" + item.linkid;
-		this.duration = $.jPlayer.convertTime( item.duration);
+		this.linkid =  item.artist + "-" + item.linkid;
+		this.durationFormatted = item.durationFormatted || $.jPlayer.convertTime( item.duration);
 		//encryption key for the lulz
-		this.song_url = rc4.decrypt(item.song_url,"Error, this track is not valid!"); 
-		this.short_url = ko.observable("");
+		this.songLink = item.songLink || rc4.decrypt(item.song_url,"Error, this track is not valid!"); 
+		this.shortLink = ko.observable(item.shortLink || "");
 		
 		this.fetchShortUrl = function(){
-			$.shortenUrl(this.song_url, function(short_url) {
-				this.short_url(this.artist + " - " + this.title + ": " + short_url);
+			$.shortenUrl(this.songLink, function(short_url) {
+				this.shortLink(this.artist + " - " + this.title + ": " + short_url);
 			}.bind(this));
 		}
 		this.clean = function(str){
@@ -73,6 +74,17 @@ var PPL = new (function(){
 			if (confirm("Would you like to search more songs by " + this.artist + "?"))	
 				location.href = "#search-results?keyword=" + this.artist;
 		}
+		
+		this.toString = function(){
+			return {
+				artist: this.artist,
+				title: this.title,
+				album: this.albumImage(),
+				linkid: this.linkid,
+				songLink: this.songLink,
+				shortLink: this.shortLink()
+			}
+		}
 	};	
 
 	this.playlists = new (function(){
@@ -94,24 +106,38 @@ var PPL = new (function(){
 			var playlist = this;
 			var load = function(newName, newTracks){
 				$.each(newTracks, function(i,o){
-					playlist.addTrack(o);
+					playlist.addJSTrack(o);
 				});
 			}
 			
 			this.name = newName;
 			this.tracks = ko.observableArray();
 			
-			this.addTrack = function(track){
+			this.addJSTrack = function(track){
 				playlist.tracks.push(context.createTrack(track));
 				this.save();
 			}.bind(playlists);
 			
+			this.addKOTrack = function(track){
+				playlist.tracks.push(track);
+				this.save();
+			}.bind(playlists);
+			
 			this.addActiveTrack = function(){
-				playlist.addTrack(this.activeTrack());
+				playlist.addKOTrack(this.activeTrack());
 				this.activePlaylist(playlist);
 			}.bind(context);
 			
 			load(newName, newTracks);
+			
+			this.toString = function(){
+				var items = [];
+				var allTracks = this.tracks();
+				for (index in allTracks){
+					items.push(allTracks[index].toString());
+				}
+				return { name: this.name, tracks: items };
+			}
 		}
 		
 		this.add = function(name, tracks){
@@ -136,7 +162,12 @@ var PPL = new (function(){
 		}
 		
 		this.toString = function(){
-            return ko.toJS(this.getAll());
+			var lists = this.getAll();
+			var lists2 = [];
+			for (index in lists){
+			    lists2.push(lists[index].toString())
+			}
+			return lists2;
 		}
 		
 		load();
@@ -510,7 +541,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			e.preventDefault();
 		}
 		else if (u.hash.search(sp2) !== -1){
-			//PPL.activePlaylist(PPL.playlists.getByName(u.hash.replace( /.*name=/, "" )));
+			PPL.activePlaylist(PPL.playlists.getByName(u.hash.replace( /.*name=/, "" )));
 			PPL.finishPageLoad();
 			e.preventDefault();
 		}
