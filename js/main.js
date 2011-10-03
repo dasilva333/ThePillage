@@ -34,7 +34,7 @@ var PPL = new (function(){
 		this.albumImage = ko.observable(item.album);
 		this.trackid = item.trackid;
 		this.linkid =  item.artist + "-" + item.linkid;
-		this.durationFormatted = item.durationFormatted || $.jPlayer.convertTime( item.duration);
+		this.durationFormatted = item.durationFormatted || $.jPlayer.convertTime( item.duration );
 		//encryption key for the lulz
 		this.songLink = item.songLink || rc4.decrypt(item.song_url,"Error, this track is not valid!"); 
 		this.shortLink = ko.observable(item.shortLink || "");
@@ -60,8 +60,7 @@ var PPL = new (function(){
 		}
 		
 		this.open = function(){
-			console.log(track.song_url);
-			this.audioPlayer.jPlayer("setMedia", { mp3 : track.song_url }).jPlayer("play");
+			this.audioPlayer.jPlayer("setMedia", { mp3 : track.songLink }).jPlayer("play");
 			return false;
 		}.bind(context);
 		
@@ -82,7 +81,8 @@ var PPL = new (function(){
 				album: this.albumImage(),
 				linkid: this.linkid,
 				songLink: this.songLink,
-				shortLink: this.shortLink()
+				shortLink: this.shortLink(),
+				durationFormatted: this.durationFormatted
 			}
 		}
 	};	
@@ -207,7 +207,6 @@ var PPL = new (function(){
 		}
 		
 		this.setTrackImages = function(data){
-			console.log(data);
 			var curData = data.query.results.entries.result;
 			var curPage = this.search.activePage();
 			$.each(curData,function(i,o){
@@ -245,7 +244,6 @@ var PPL = new (function(){
 	
 				//this part goes to YQL for all the missingAlbumArt array and finds their images	
 				this.missingAlbumArt.fetch('PPL.missingAlbumArt.setTrackImages');
-				console.log('this.missingAlbumArt.fetch');
 				setTimeout(function(){
 					this.finishPageLoad();
 				}.bind(this),250);
@@ -280,7 +278,9 @@ var PPL = new (function(){
 		}.bind(context)
 		
 		this.submit = function(form){
-			location.hash = "#search-results?keyword=" + form.searchBox.value;
+			try {
+				location.hash = "#search-results?keyword=" + form.searchBox.value;
+			}catch(e){alert(e);}
 			return false;			
 		};
 		
@@ -332,7 +332,6 @@ var PPL = new (function(){
 			var history = $.jStorage.get(KEY_NAME, DEFAULT_HISTORY);
 			
 			var load = function(items){
-				console.log(items);
 				$.each(items,function(index){
 					this.addItem(items[index]);
 				}.bind(this));
@@ -349,7 +348,7 @@ var PPL = new (function(){
 				}.bind(historyContext);
 				
 				this.isActive = function(){
-					return context.search.activePage().keyword == this.keyword;// && PPL.activePageName() == "playlists-view";
+					return context.search.activePage().keyword.toUpperCase() == this.keyword.toUpperCase() && context.activePageName() == "search-results";
 				}
 			}
 			
@@ -358,7 +357,7 @@ var PPL = new (function(){
 					value = { keyword: value, count: 1 }
 				if (typeof value == "object" && 'keyword' in value){
 					var arr = ko.utils.arrayFilter(this.getItems(), function(item){
-					   return item.keyword == value.keyword ? item: null;
+					   return item.keyword.toUpperCase() == value.keyword.toUpperCase() ? item: null;
 					});
 					if (arr.length == 0){
 						items.unshift(new Item(value));
@@ -366,7 +365,7 @@ var PPL = new (function(){
 					else {
 						arr[0].count(arr[0].count()+1);
 					}
-					this.save()
+					this.save();
 				}
 			} 
 			this.getItems = function(){
@@ -450,7 +449,6 @@ var PPL = new (function(){
 })(); 
  
 $(document).ready(function(){
-	console.log("document.ready");
 	PPL.audioPlayer = $('#jquery_jplayer_1').jPlayer(
 		{
 			swfPath: 'swf',
@@ -492,9 +490,6 @@ $("#main-page, #search-results, #track-view").live('pagebeforecreate',PPL.pageBe
  
 // Listen for any attempts to call changepage.
 $(document).bind( "pagebeforechange", function( e, data ) {
-	//console.log("pagebeforechange");
-	//console.log(data);
-	
 	if ( typeof data.options.fromPage == "undefined" && data.options.transition == "none")
 		ko.applyBindings(PPL);	
 		
