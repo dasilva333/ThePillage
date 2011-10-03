@@ -146,8 +146,6 @@ var PPL = new (function(){
 		}
 		
 		this.save = function(){
-			console.log("saving playlists")
-			console.log(this.toString())
 			$.jStorage.set(KEY_NAME, this.toString());
 		}
 		
@@ -172,35 +170,6 @@ var PPL = new (function(){
 		
 		load();
 	})()
-	
-	var TrackPage = function(keyword, number){
-		var trackpage = this;
-		this.pageNumber = number;
-		this.keyword = keyword;
-		this.tracks = ko.observableArray();
-
-		var load = function(keyword, number){
-			//add the results to the page
-			for(var index in this.search.trackdata)
-				trackpage.tracks.push(new Track(this.search.trackdata[index]));
-
-			//this part goes to YQL for all the missingAlbumArt array and finds their images	
-			this.missingAlbumArt.fetch('PPL.missingAlbumArt.setTrackImages');
-			
-			setTimeout(function(){
-				this.finishPageLoad();
-			}.bind(this),250);
-			
-		}.bind(context);
-				
-		this.findTrackById = function(trackid){
-			return ko.utils.arrayFilter(this.tracks(), function(track){
-				return track.trackid == trackid ? track: null;
-			})[0];
-		};
-		
-		load(keyword, number);
-	}
 	
 	this.missingAlbumArt = new (function(){
 		var missingAlbumArt	= [];
@@ -229,10 +198,12 @@ var PPL = new (function(){
 		}
 		
 		this.addItem = function(item){
+			item[1] = escape(item[1]);
 			missingAlbumArt.push(item);	
 		}
 		
 		this.setTrackImages = function(data){
+			console.log(data);
 			var curData = data.query.results.entries.result;
 			var curPage = this.search.activePage();
 			$.each(curData,function(i,o){
@@ -256,7 +227,36 @@ var PPL = new (function(){
 	};
 	
 	this.search = new (function(){
-		var search = this;
+		var search = this;	
+		var TrackPage = function(keyword, number){
+			var trackpage = this;
+			this.pageNumber = number;
+			this.keyword = keyword;
+			this.tracks = ko.observableArray();
+	
+			var load = function(keyword, number){
+				//add the results to the page
+				for(var index in this.search.trackdata)
+					trackpage.tracks.push(new Track(this.search.trackdata[index]));
+	
+				//this part goes to YQL for all the missingAlbumArt array and finds their images	
+				this.missingAlbumArt.fetch('PPL.missingAlbumArt.setTrackImages');
+				console.log('this.missingAlbumArt.fetch');
+				setTimeout(function(){
+					this.finishPageLoad();
+				}.bind(this),250);
+				
+			}.bind(context);
+					
+			this.findTrackById = function(trackid){
+				return ko.utils.arrayFilter(this.tracks(), function(track){
+					return track.trackid == trackid ? track: null;
+				})[0];
+			};
+			
+			load(keyword, number);
+		}
+		
 		this.searchVersion = "",
 		this.searchTerm = "";
 		this.trackdata = null;
@@ -268,7 +268,6 @@ var PPL = new (function(){
 			
 		//This function gets called automatically due to the Playlist.com API
 		this.searchResultsFn = function(){
-			console.log("searchResultsFn");
 			if (this.activePageName() == "search-results")
 				search.loadTracks(); 
 			else if (this.activePageName() == "track-view")
@@ -302,17 +301,17 @@ var PPL = new (function(){
 		})
 		
 		this.loadTracks = function(){
+			console.log("loading search result tracks")
 			this.activePage(new TrackPage(this.searchFor(), this.currentPage));		
 		};
 	
 		this.tracks = function(keyword){
 			if (typeof keyword != "undefined" && keyword != ""){
-				//the onload attribute doesnt need to be set because the callback is hardcoded into the response (searchResultsFn)
 				$.mobile.showPageLoadingMsg();	
 				if (typeof this.history == "object"){
 					this.history.addItem(keyword);
 				}
-				this.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1");	
+				context.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1");	
 			}
 		}
 		
@@ -402,6 +401,7 @@ var PPL = new (function(){
 		this.finishPageLoad();
 	}.bind(context); 
 
+	//the onload attribute doesnt need to be set because the callback is hardcoded into the response (searchResultsFn)
 	this.remoteRequest = function(src){
 		var script = document.createElement("script"); 
 		script.setAttribute("type","text/javascript"); 
@@ -443,12 +443,8 @@ var PPL = new (function(){
 		$.mobile.changePage( $page, options );
 	}
 	
-	this.refreshNavbar = function(){
-		console.log("refresh navbar");
-	}
-	
 	this.pageBeforeCreate = function(){
-		console.log("pagebeforecreate");
+		//console.log("pagebeforecreate");
 		//this gets called AFTER pageBeforeChange and BEFORE document.ready
 		
 	}.bind(this);
@@ -498,8 +494,8 @@ $("#main-page, #search-results, #track-view").live('pagebeforecreate',PPL.pageBe
  
 // Listen for any attempts to call changepage.
 $(document).bind( "pagebeforechange", function( e, data ) {
-	console.log("pagebeforechange");
-	console.log(data);
+	//console.log("pagebeforechange");
+	//console.log(data);
 	
 	if ( typeof data.options.fromPage == "undefined" && data.options.transition == "none")
 		ko.applyBindings(PPL);	
@@ -527,7 +523,7 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			// the DOM. The id of the page we are going to write our
 			// content into is specified in the hash before the '?'.			
 			PPL.activePageName("search-results");
-			PPL.search.track(u.hash.replace( /.*keyword=/, "" ));
+			PPL.search.tracks(u.hash.replace( /.*keyword=/, "" ));
 			
 			// Make sure to tell changepage we've handled this call so it doesn't
 			// have to do anything.
