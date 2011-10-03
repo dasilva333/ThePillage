@@ -53,7 +53,7 @@
     </script>
     
 	<script id="historyTemplate" type="text/html">
-		<li>
+		<li data-bind="css:{ 'ui-btn-active': isActive() }">
 			<a href="#search-results?keyword=${$data.keyword}">
 				${$data.keyword} 
 				<span class="ui-li-count">${$data.count}</span>
@@ -63,7 +63,7 @@
     </script>
 
 	<script id="playlistTemplate" type="text/html">	
-		<li data-bind="css:{ 'ui-btn-active': PPL.activePlaylist().name == $data.name }"><a href="#playlist-view?name=${ $data.name }">${ $data.name }</a></li>
+		<li data-bind="css:{ 'ui-btn-active': isActive() }"><a href="#playlist-view?name=${ $data.name }">${ $data.name }</a></li>
     </script>
 	
 	<script id="addPlaylistTemplate" type="text/html">	
@@ -79,7 +79,14 @@
 			</ul>
 		</div>
     </script>
-    
+     
+	<script id="historyAndPlaylistsTemplate" type="text/html">
+    	<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search History</li></ul>
+        <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }"></ul>
+		<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Saved Playlists</li></ul>
+        <ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;" data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
+    </script>
+	
 	<script id="playerTemplate" type="text/html">
         <div id="jp_container_1" data-role="none" class="jp-audio">
             <div class="jp-type-single">
@@ -159,13 +166,7 @@
                 </ul>
             </div>
  		   <div class="content-secondary">
-    
-                <div data-role="collapsible" data-collapsed="true" data-theme="a">
-					<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search History</li></ul>
-                    <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }">
-                    </ul>
-                    <ul data-role="listview" data-theme="c" data-dividertheme="d" data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
-                    </ul>
+                <div data-role="collapsible" data-collapsed="true" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
                 </div>
             </div>	
         </div>
@@ -230,9 +231,7 @@
                 <ul data-role="listview"  data-theme="c" data-dividertheme="d" data-bind="template: { name: 'trackTemplate', foreach: PPL.activePlaylist().tracks() }" data-filter="true" data-filter-placeholder="Search within playlist" data-filter-theme="d"></ul>
             </div>
  		   <div class="content-secondary">
-                <div data-role="collapsible" data-collapsed="true">
-					<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Saved Playlists</li></ul>
-                    <ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;" data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
+                <div data-role="collapsible" data-collapsed="true" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
                 </div>
             </div>
 		</div><!-- /content -->

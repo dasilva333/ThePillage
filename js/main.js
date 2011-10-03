@@ -113,6 +113,10 @@ var PPL = new (function(){
 			this.name = newName;
 			this.tracks = ko.observableArray();
 			
+			this.isActive = function(){
+				return PPL.activePlaylist().name == this.name && PPL.activePageName() == "playlists-view";
+			}
+			
 			this.addJSTrack = function(track){
 				playlist.tracks.push(context.createTrack(track));
 				this.save();
@@ -276,7 +280,7 @@ var PPL = new (function(){
 		}.bind(context)
 		
 		this.submit = function(form){
-			this.searchFor(form.searchBox.value);
+			location.hash = "#search-results?keyword=" + form.searchBox.value;
 			return false;			
 		};
 		
@@ -286,27 +290,18 @@ var PPL = new (function(){
 			setTimeout(function(){
 				if (elem.value == theValue && isRun == false){
 					isRun = true;
-					this.searchFor(theValue);
+					location.hash = "#search-results?keyword=" + theValue;
 				}	
 			}.bind(this),3000);	
 		};
 		
-		this.searchFor = ko.dependentObservable({
-			read: function() {
-				return location.hash.replace( /.*keyword=/, "" );
-			},
-			write: function (value) {
-				location.hash = "#search-results?keyword=" + value;
-			}
-		})
-		
 		this.loadTracks = function(){
-			console.log("loading search result tracks")
-			this.activePage(new TrackPage(this.searchFor(), this.currentPage));		
+			this.activePage(new TrackPage(this.searchTerm, this.currentPage));		
 		};
 	
 		this.tracks = function(keyword){
 			if (typeof keyword != "undefined" && keyword != ""){
+				this.searchTerm = keyword;
 				$.mobile.showPageLoadingMsg();	
 				if (typeof this.history == "object"){
 					this.history.addItem(keyword);
@@ -330,6 +325,7 @@ var PPL = new (function(){
 		}.bind(context);
 		
 		this.history = new (function(){
+			var historyContext = this;
 			var KEY_NAME = "history";
 			var DEFAULT_HISTORY = ["Muse","Radiohead"];
 			var items =  ko.observableArray();
@@ -343,14 +339,20 @@ var PPL = new (function(){
 			}.bind(this);
 			
 			var Item = function(item){
+				var itemContext = this;
 				this.keyword = unescape(item.keyword);
 				this.count = ko.observable(item.count || 1);
 				
 				this.remove = function(){
-					items.remove(this);
-				}
+					items.remove(itemContext);
+					this.save();
+				}.bind(historyContext);
 				
+				this.isActive = function(){
+					return context.search.activePage().keyword == this.keyword;// && PPL.activePageName() == "playlists-view";
+				}
 			}
+			
 			this.addItem = function(value){
 				if (typeof value == "string" && value != '')
 					value = { keyword: value, count: 1 }
@@ -373,10 +375,6 @@ var PPL = new (function(){
 			
 			this.save = function(){
 				$.jStorage.set(KEY_NAME, this.toString());
-			}
-			
-			this.refresh = function(){
-				
 			}
 			
 			this.toString = function(){
@@ -523,8 +521,14 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			// the DOM. The id of the page we are going to write our
 			// content into is specified in the hash before the '?'.			
 			PPL.activePageName("search-results");
-			PPL.search.tracks(u.hash.replace( /.*keyword=/, "" ));
-			
+			var searchTerm = u.hash.replace( /.*keyword=/, "" );
+			//avoid making a remote request if navigating the history to the same page
+			if (searchTerm == PPL.search.activePage().keyword) {
+				PPL.finishPageLoad();
+			}
+			else {
+				PPL.search.tracks(searchTerm);
+			}
 			// Make sure to tell changepage we've handled this call so it doesn't
 			// have to do anything.
 			e.preventDefault();
