@@ -265,7 +265,8 @@ var PPL = new (function(){
 		this.currentPage = 1;
 		this.activePage = ko.observable({
 			//TODO remove this dependency for the foreach template
-			tracks: ko.observableArray()
+			tracks: ko.observableArray(),
+			keyword: ""
 		});
 			
 		//This function gets called automatically due to the Playlist.com API

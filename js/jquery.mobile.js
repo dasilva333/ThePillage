@@ -4013,10 +4013,9 @@ $.widget( "mobile.listview", $.mobile.widget, {
 		if ( counter ) {
 			$list.find( ".ui-li-dec" ).remove();
 		}
-
-		for ( var pos = 0, numli = li.length; pos < numli; pos++ ) {
-			item = li.eq( pos );
-			itemClass = "ui-li";
+		
+		window.jqmStyleLI = function(item){
+itemClass = "ui-li";
 
 			// If we're creating the element, we update it regardless
 			if ( create || !item.hasClass( "ui-li" ) ) {
@@ -4093,7 +4092,12 @@ $.widget( "mobile.listview", $.mobile.widget, {
 
 			item.add( item.children( ".ui-btn-inner" ) ).addClass( itemClass );
 
-			self._itemApply( $list, item );
+			self._itemApply( $list, item );			
+		}
+		
+		for ( var pos = 0, numli = li.length; pos < numli; pos++ ) {
+			item = li.eq( pos );
+			jqmStyleLI(item);
 		}
 		
 		this._refreshCorners( create );

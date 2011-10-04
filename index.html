@@ -82,7 +82,7 @@
      
 	<script id="historyAndPlaylistsTemplate" type="text/html">
     	<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Search History</li></ul>
-        <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }"></ul>
+        <ul class="historyTemplate" data-role="listview" data-theme="c" style="padding-bottom:15px;" data-dividertheme="d" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems(), afterAdd: function(){ console.log('afterAdd'); } }"></ul>
 		<ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;"><li data-role="list-divider">Saved Playlists</li></ul>
         <ul data-role="listview" data-theme="c" data-dividertheme="d" style="padding-bottom:15px;" data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
     </script>
@@ -138,13 +138,7 @@
         <div data-role="header" data-position="fixed" data-bind="template: { name: 'searchTemplate' }">
         </div><!-- /header -->
     
-        <div data-role="content" data-theme="a" style="background:none;">	
-        	<h3>Search History</h3>
-			<ul class="historyTemplate" data-role="listview" data-theme="c" data-dividertheme="d" style="margin-top:0;" data-inset="true" data-bind="template: { name: 'historyTemplate', foreach: PPL.search.history.getItems() }">
-            </ul>
-			<h3 data-theme="c">Saved Playlists</h3>
-            <ul data-role="listview" data-theme="c" data-dividertheme="d" data-inset="true"  data-bind="template: { name: 'playlistTemplate', foreach: PPL.playlists.getAll() }">
-            </ul>
+        <div data-role="content" data-theme="a" style="background:none;" data-bind="template: { name: 'historyAndPlaylistsTemplate' }">
 		</div><!-- /content -->
 		
         <div data-role="footer" data-position="fixed" data-id="navbar">
