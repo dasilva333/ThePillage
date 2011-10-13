@@ -1,3 +1,44 @@
+/*
+function getScrollMaxY(){ 
+
+	var innerh = getWindowHeight();
+	
+	if (window.innerHeight && window.scrollMaxY){
+	    // Firefox 
+	    yWithScroll = window.innerHeight + window.scrollMaxY; 
+	} else if (document.body.scrollHeight > document.body.offsetHeight){ 
+	    // all but Explorer Mac 
+	    yWithScroll = (currentOrientation() == "portrait") ? document.body.scrollHeight : document.body.scrollWidth; 
+	} else { 
+	    // works in Explorer 6 Strict, Mozilla (not FF) and Safari 
+	    yWithScroll = document.body.offsetHeight; 
+	} 
+	return yWithScroll-innerh; 
+}
+
+function isBottom() {
+    return (($.support.scrollTop&&document.body.scrollTop>0)?document.body.scrollTop:window.pageYOffset) >= getScrollMaxY() - 70;
+}
+
+loadMore = true;
+( ( $(document).scrollTop() === 0 ) ? $(window) : $(document) ).bind( "scrollstart scrollstop", function( event ) {
+	if (isBottom()){
+		if (loadMore == true){
+			loadMore = false;
+			PPL.search.activePage().pageNumber += 1;
+			PPL.search.tracks(PPL.search.activePage().keyword, PPL.search.activePage().pageNumber);
+			setTimeout(function(){
+				loadMore = true;	
+			},5000);
+		}
+	}	
+})
+
+$("ul.searchResultsList li").live("taphold swipeleft", function(){
+    alert($(this).text());
+})
+  */ 
+  
 var RemoteLogger = {
 	logEvent: function(string,data){
 		console.log(data);	
@@ -12,7 +53,8 @@ var PPL = new (function(){
 	this.activeTrack = ko.observable({
 		albumImage: ko.observable(""),
 		songLink: ko.observable(""),
-		shortLink: ko.observable("")
+		shortLink: ko.observable(""),
+		download: function(){}
 	})
 	
 	this.activePlaylist = ko.observable({
@@ -64,12 +106,20 @@ var PPL = new (function(){
 			return false;
 		}.bind(context);
 		
+		this.download = function(){
+			if ('enyo' in window){
+				enyo.windows.addBannerMessage("Download Started", "{}");
+				window.enyo.dispatch({type:"customGlobalEvent", data:{ url: this.songLink, filename: this.artist + ' ' + this.title + '.mp3' }});
+			}				
+			else
+				location.href = this.songLink;
+		}.bind(this);
+		
 		this.setActiveTrack = function(){
 			this.activeTrack(track);
 		}.bind(context);
 		
 		this.promptMoreOfArtist = function(){
-			//TODO replace confirm, does not work on the touchpad
 			if (confirm("Would you like to search more songs by " + this.artist + "?"))	
 				location.href = "#search-results?keyword=" + this.artist;
 		}
@@ -236,7 +286,38 @@ var PPL = new (function(){
 			this.pageNumber = number;
 			this.keyword = keyword;
 			this.tracks = ko.observableArray();
-	
+			this.pullUpE = $("#search-results .pullUp").get(0);
+			this.listWrapper = $("#search-results .wrapper").get(0);
+			this.listScroller = new iScroll(this.listWrapper, {
+				useTransition: true,
+				onRefresh: function () {  
+					if (trackpage.pullUpE.className.match('loading')) {
+						trackpage.pullUpE.className = '';
+						trackpage.pullUpE.querySelector('.pullUpLabel').innerHTML = 'Pull up to load more...';
+					}
+				},
+				onScrollMove: function () {
+					if (this.y < (this.maxScrollY - 5) && !trackpage.pullUpE.className.match('flip')) {
+						trackpage.pullUpE.className = 'flip';
+						trackpage.pullUpE.querySelector('.pullUpLabel').innerHTML = 'Release to refresh...';
+						this.maxScrollY = this.maxScrollY;
+					} else if (this.y > (this.maxScrollY + 5) && trackpage.pullUpE.className.match('flip')) {
+						trackpage.pullUpE.className = '';
+						trackpage.pullUpE.querySelector('.pullUpLabel').innerHTML = 'Pull up to load more...';
+						this.maxScrollY = trackpage.pullUpE.offsetHeight;
+					}
+				}, 
+				onScrollEnd: function () {
+					if (trackpage.pullUpE.className.match('flip')) {
+						trackpage.pullUpE.className = 'loading';
+						trackpage.pullUpE.querySelector('.pullUpLabel').innerHTML = 'Loading...';
+						
+						trackpage.pageNumber += 1;
+						context.search.tracks(trackpage.keyword, trackpage.pageNumber);
+					}
+				}
+			})
+				
 			var load = function(keyword, number){
 				//add the results to the page
 				for(var index in this.search.trackdata)
@@ -244,12 +325,24 @@ var PPL = new (function(){
 	
 				//this part goes to YQL for all the missingAlbumArt array and finds their images	
 				this.missingAlbumArt.fetch('PPL.missingAlbumArt.setTrackImages');
+				
 				setTimeout(function(){
 					this.finishPageLoad();
-				}.bind(this),250);
+				}.bind(this),102);
+								
+
+				setTimeout(function(){
+					trackpage.listScroller.refresh();
+					trackpage.listWrapper.style.left = '0';
+				}.bind(this), 800);
 				
 			}.bind(context);
-					
+			
+			this.loadMore = function(keyword, number){
+				this.pageNumber = number;
+				load(keyword, number);
+			}
+			
 			this.findTrackById = function(trackid){
 				return ko.utils.arrayFilter(this.tracks(), function(track){
 					return track.trackid == trackid ? track: null;
@@ -297,17 +390,22 @@ var PPL = new (function(){
 		};
 		
 		this.loadTracks = function(){
-			this.activePage(new TrackPage(this.searchTerm, this.currentPage));		
+			if (PPL.search.activePage().keyword == this.searchTerm && 
+				PPL.search.activePage().currentPage != this.currentPage)
+				this.activePage().loadMore(this.searchTerm, this.currentPage);
+			else
+				this.activePage(new TrackPage(this.searchTerm, this.currentPage));		
 		};
 	
-		this.tracks = function(keyword){
+		this.tracks = function(keyword, page){
+			var currentPage = page || 1;
 			if (typeof keyword != "undefined" && keyword != ""){
 				this.searchTerm = keyword;
 				$.mobile.showPageLoadingMsg();	
 				if (typeof this.history == "object"){
 					this.history.addItem(keyword);
 				}
-				context.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=1");	
+				context.remoteRequest("http://www.playlist.com/async/searchbeta/tracks?searchfor=" + keyword + "&page=" + currentPage);	
 			}
 		}
 		
@@ -409,7 +507,10 @@ var PPL = new (function(){
 
 	this.finishPageLoad = function(){
 		//jquery mobile method
-		pageSelector = u.hash.replace( /\?.*$/, "" );
+		try {
+			var pageSelector = u.hash.replace( /\?.*$/, "" );	
+		}catch(e){ return }
+		
 		// Get the page we are going to dump our content into.
 		var $page = $( pageSelector );
 		var $content = $page.children( ":jqmData(role=content)" );
@@ -428,17 +529,20 @@ var PPL = new (function(){
 		$(":jqmData(role='navbar')").navbar();	
 		
 		//ehnace the input if needed
-		//$('input').textinput();
+		$('input').textinput();
 		
 		// We don't want the data-url of the page we just modified
 		// to be the url that shows up in the browser's location field,
 		// so set the dataUrl option to the URL for the category
 		// we just loaded.
 		options.dataUrl = u.href;
-	
+		//var options = {};
+		//options.dataUrl  = "#" + PPL.activePageName();
+		
 		// Now call changePage() and tell it to switch to
 		// the page we just modified.
 		$.mobile.changePage( $page, options );
+		$("body").css({ "overflow":"scroll !important"});
 	}
 	
 	this.pageBeforeCreate = function(){
@@ -449,58 +553,73 @@ var PPL = new (function(){
 	
 })(); 
  
-$(document).ready(function(){
-	PPL.audioPlayer = $('#jquery_jplayer_1').jPlayer(
-		{
-			swfPath: 'swf',
-			solution: 'html, flash',
-			supplied: 'mp3',
-			preload: 'metadata',
-			volume: 0.8,
-			muted: false,
-			backgroundColor: '#000000',
-			cssSelectorAncestor: '.jp-audio',
-			cssSelector: {
-			videoPlay: '.jp-video-play',
-			play: '.jp-play',
-			pause: '.jp-pause',
-			stop: '.jp-stop',
-			seekBar: '.jp-seek-bar',
-			playBar: '.jp-play-bar',
-			mute: '.jp-mute',
-			unmute: '.jp-unmute',
-			volumeBar: '.jp-volume-bar',
-			volumeBarValue: '.jp-volume-bar-value',
-			volumeMax: '.jp-volume-max',
-			currentTime: '.jp-current-time',
-			duration: '.jp-duration',
-			fullScreen: '.jp-full-screen',
-			restoreScreen: '.jp-restore-screen',
-			repeat: '.jp-repeat',
-			repeatOff: '.jp-repeat-off',
-			gui: '.jp-gui',
-			noSolution: '.jp-no-solution'
-		},
-		errorAlerts: false,
-		warningAlerts: false
-	}); 
-});
+ 
  
 $("#main-page, #search-results, #track-view").live('pagebeforecreate',PPL.pageBeforeCreate);
-
  
 // Listen for any attempts to call changepage.
 $(document).bind( "pagebeforechange", function( e, data ) {
-	if ( typeof data.options.fromPage == "undefined" && data.options.transition == "none")
-		ko.applyBindings(PPL);	
-		
+	if ( typeof data.options.fromPage == "undefined" && data.options.transition == "none"){
+		$.get("templates.html", function(r){
+		    $("head").append(r);
+			ko.applyBindings(PPL);
+			if (location.hash == "")
+				location.hash = "#main-page";
+				
+			
+			if ('enyo' in window){
+				enyo.keyboard.setResizesWindow(false);
+				new TracksPlayer();
+				new DownloadService();
+				enyo.log("enyo init");
+			}				
+				
+			PPL.audioPlayer = $('#jquery_jplayer_1').jPlayer(
+				{
+					swfPath: 'swf',
+					solution: 'html,flash',
+					supplied: 'mp3',
+					preload: 'metadata',
+					volume: 0.8,
+					muted: false,
+					backgroundColor: '#000000',
+					cssSelectorAncestor: '.jp-audio',
+					cssSelector: {
+					videoPlay: '.jp-video-play',
+					play: '.jp-play',
+					pause: '.jp-pause',
+					stop: '.jp-stop',
+					seekBar: '.jp-seek-bar',
+					playBar: '.jp-play-bar',
+					mute: '.jp-mute',
+					unmute: '.jp-unmute',
+					volumeBar: '.jp-volume-bar',
+					volumeBarValue: '.jp-volume-bar-value',
+					volumeMax: '.jp-volume-max',
+					currentTime: '.jp-current-time',
+					duration: '.jp-duration',
+					fullScreen: '.jp-full-screen',
+					restoreScreen: '.jp-restore-screen',
+					repeat: '.jp-repeat',
+					repeatOff: '.jp-repeat-off',
+					gui: '.jp-gui',
+					noSolution: '.jp-no-solution'
+				},
+				errorAlerts: false,
+				warningAlerts: false
+			});
+			
+			PPL.finishPageLoad();
+		});	
+	}		
 	// We only want to handle changepage calls where the caller is
 	// asking us to load a page by URL.
 	if ( typeof data.toPage === "string" ) {
+		window.u = $.mobile.path.parseUrl( data.toPage );	
 		// We are being asked to load a page by URL, but we only
 		// want to handle URLs that request the data for a specific
 		// category.
-		window.u = $.mobile.path.parseUrl( data.toPage );
+		
 		window.options = data;
 		var sr = /^#search-results/; 
 		var tv = /^#track-view/; 
@@ -535,7 +654,12 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			e.preventDefault();
 		}
 		//todo write a regex so it looks cleaner
-		else if ( u.hash.search(mp) !== -1 || u.hash.search(pv) !== -1 ){
+		else if ( u.hash.search(mp) !== -1 ) {
+			PPL.activePageName("main-page");
+			PPL.finishPageLoad();
+			e.preventDefault();
+		}
+		else if ( u.hash.search(pv) !== -1 ) {
 			PPL.activePageName("playlists-view");
 			PPL.finishPageLoad();
 			e.preventDefault();
@@ -546,5 +670,5 @@ $(document).bind( "pagebeforechange", function( e, data ) {
 			PPL.finishPageLoad();
 			e.preventDefault();
 		}
-	}
+	} 
 });

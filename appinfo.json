@@ -1,9 +1,9 @@
 {
-	"id": "com.phonegap.webos",
-	"version": "0.0.1",
-	"vendor": "Palm",
+	"id": "com.palm.feedreader-step4",
+	"version": "1.0.0",
+	"vendor": "HP",
 	"type": "web",
 	"main": "index.html",
-	"title": "PhoneGap WebOS",
+	"title": "Enyo FeedReader Step 4",
 	"uiRevision": 2
 }

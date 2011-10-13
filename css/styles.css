@@ -1,7 +1,7 @@
 
 /* Overrides on top of jQuery mobile's css */
-
-
+body { overflow:scroll !important; }
+.ui-content .ui-listview { margin:0px; }
 /* this affects the background*/
 .ui-body-c { 
 	background-color: #333;
@@ -13,11 +13,18 @@
 .ui-input-search { vertical-align:middle; }
 .ui-input-search input.ui-input-text { color:white; }
 .ui-field-contain { margin:0.7em 0; padding:0.8em 0; }
+.ui-li, .ui-li.ui-field-contain {  }
 /* Hide the Search label when the screen is too small */
 .searchLabel { vertical-align:middle; margin:1em 0; text-align:center; }
-.searchlabelText {  text-align:right; display:none !important; }
+.searchlabelText, .addplaylistText {  text-align:right; display:none !important; }
+.listLoader {    
+	height: 30px;
+    margin-top: 15px;
+    padding-top: 15px;
+    text-align: center;
+}
 @media screen and (min-width: 600px) {
-	.searchlabelText { display:inline-block !important }
+	.searchlabelText, .addplaylistText { display:inline-block !important }
 }
 /* this affects the pages with secondary content */
 .secondaryContent .content-primary, .secondaryContent .content-secondary { margin:0; }
@@ -71,7 +78,7 @@ p.intro strong {
 .type-interior .content-secondary {
 	border-right: 0;
 	border-left: 0;
-	margin: 10px -15px 0;
+	/*margin: 10px -15px 0;*/
 	background: #fff;
 	border-top: 1px solid #ccc;
 }

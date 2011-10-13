@@ -3151,14 +3151,13 @@ $.widget( "mobile.page", $.mobile.widget, {
 					changeHash: false,
 					fromHashChange: true
 				};
-			//console.log($.mobile.hashListeningEnabled);
-			//console.log(urlHistory.ignoreNextHashChange);
+
 			//if listening is disabled (either globally or temporarily), or it's a dialog hash
-			/*if( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) {
+			if( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) {
 				urlHistory.ignoreNextHashChange = false;
 				return;
 			}
-			console.log('test 1');*/
+
 			// special case for dialogs
 			if( urlHistory.stack.length > 1 && to.indexOf( dialogHashKey ) > -1 ) {
 
@@ -3199,7 +3198,7 @@ $.widget( "mobile.page", $.mobile.widget, {
 					});
 				}
 			}
-			//console.log('test 2');
+
 			//if to is defined, load it
 			if ( to ) {
 				to = ( typeof to === "string" && !path.isPath( to ) ) ? ( '#' + to ) : to;
@@ -3208,7 +3207,6 @@ $.widget( "mobile.page", $.mobile.widget, {
 				//there's no hash, go to the first page in the dom
 				$.mobile.changePage( $.mobile.firstPage, changePageOptions );
 			}
-			//console.log('test 3');
 		};
 
 		//hashchange event handler
@@ -3586,7 +3584,6 @@ $( ":jqmData(role='page'), :jqmData(role='dialog')" ).live( "pagecreate", functi
 					"role": "heading",
 					"aria-level": "1"
 				});
-
 
 		} else if ( role === "content" ) {
 
@@ -4013,9 +4010,10 @@ $.widget( "mobile.listview", $.mobile.widget, {
 		if ( counter ) {
 			$list.find( ".ui-li-dec" ).remove();
 		}
-		
-		window.jqmStyleLI = function(item){
-itemClass = "ui-li";
+
+		for ( var pos = 0, numli = li.length; pos < numli; pos++ ) {
+			item = li.eq( pos );
+			itemClass = "ui-li";
 
 			// If we're creating the element, we update it regardless
 			if ( create || !item.hasClass( "ui-li" ) ) {
@@ -4092,12 +4090,7 @@ itemClass = "ui-li";
 
 			item.add( item.children( ".ui-btn-inner" ) ).addClass( itemClass );
 
-			self._itemApply( $list, item );			
-		}
-		
-		for ( var pos = 0, numli = li.length; pos < numli; pos++ ) {
-			item = li.eq( pos );
-			jqmStyleLI(item);
+			self._itemApply( $list, item );
 		}
 		
 		this._refreshCorners( create );
@@ -6276,7 +6269,6 @@ $.mobile.fixedToolbars = (function() {
 				var el = $(this),
 					thisCSStop = el.css( "top" ),
 					classes;
-
 
 				thisCSStop = thisCSStop == "auto" ? 0 :
 											parseFloat(thisCSStop);

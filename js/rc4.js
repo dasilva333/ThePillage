@@ -1,5 +1,7 @@
 var rc4 = new (function(){
 	this.decrypt = function(g, h) {
+	  if (typeof g == "undefined" || typeof h == "undefined")
+	  	return;	
 	  var sbox = new Array(255),
 	  	mykey = new Array(255);
 	  for(var d = [], c = g.substr(0, 2) == "0x" ? 2 : 0;c < g.length;) {
